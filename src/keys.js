@@ -41,8 +41,22 @@
     return String(text).replace(/\b(srg|de|ce|ps[345])\s*#/gi, (m) => m.toUpperCase());
   }
 
+  // Bracketed tags that don't change what the product is. Any other tag, such
+  // as [Steelbook], makes it a different product from the same number:
+  // "[Steelbook] SRG#88" is a case, not the game SRG#88.
+  const NEUTRAL_TAG = /^(club|re-?print|pre-?order|sale|deluxe edition|collector'?s edition|limited edition)$/i;
+
+  function kindOf(t) {
+    const tags = (t.match(BRACKETED) || [])
+      .map((b) => b.slice(1, -1).trim())
+      .filter((b) => b && !NEUTRAL_TAG.test(b.replace(/[’‘]/g, "'")));
+    return tags.map((b) => b.toUpperCase().replace(/[^A-Z0-9]+/g, "")).join("+");
+  }
+
   function parse(title) {
     let t = cleanTitle(title);
+    const kind = kindOf(t);
+    const prefix = kind ? kind + ":" : "";
     let platform = "";
     const pm = t.match(TRAILING_PARENS);
     if (pm) {
@@ -60,13 +74,14 @@
       return {
         title: cleanTitle(title),
         platform,
-        units: numbers.map((n) => ({ id: series + "#" + n, platform })),
+        numbered: true,
+        units: numbers.map((n) => ({ id: prefix + series + "#" + n, platform })),
       };
     }
 
     const name = t.replace(BRACKETED, " ").toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!name) return { title: cleanTitle(title), platform, units: [] };
-    return { title: cleanTitle(title), platform, units: [{ id: "name:" + name, platform }] };
+    if (!name) return { title: cleanTitle(title), platform, numbered: false, units: [] };
+    return { title: cleanTitle(title), platform, numbered: false, units: [{ id: "name:" + prefix + name, platform }] };
   }
 
   function unitKey(u) {

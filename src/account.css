@@ -1,0 +1,17 @@
+.srgo-account {
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483000;
+  width: 320px; box-sizing: border-box; padding: 14px 16px; border-radius: 10px;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #111; background: #fff; border: 2px solid #15803d;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+.srgo-account strong { display: block; margin-bottom: 4px; font-size: 15px; color: #15803d; }
+.srgo-account-msg { margin: 0 0 10px; }
+.srgo-account-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.srgo-account button {
+  padding: 6px 12px; min-height: 36px; border: 1px solid #d4d4d4; border-radius: 6px;
+  background: #f5f5f5; color: #111; font: 600 14px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; cursor: pointer;
+}
+.srgo-account button.srgo-primary { background: #15803d; border-color: #15803d; color: #fff; }
+.srgo-account button:disabled { opacity: 0.6; cursor: progress; }
+.srgo-account button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }

@@ -5,3 +5,5 @@ node_modules/
 .web-extension-id
 *.xpi
 .DS_Store
+# saved account pages hold personal order history
+*SRG-ORDER*.html

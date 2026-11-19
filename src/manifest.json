@@ -1,30 +1,77 @@
 {
   "manifest_version": 3,
   "name": "SRG Owned",
-  "version": "0.1.0",
-  "description": "Marks Super Rare Games releases you already own, including club early-access copies, and warns when they're in your cart.",
-  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
-  "permissions": ["storage"],
-  "host_permissions": ["https://superraregames.com/*", "https://*.superraregames.com/*"],
+  "version": "0.2.0",
+  "description": "Marks Super Rare Games releases you already own, including club early-access copies, warns when they're in your cart, and imports them from your order history.",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://superraregames.com/*",
+    "https://*.superraregames.com/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://superraregames.com/*", "https://*.superraregames.com/*"],
-      "js": ["keys.js", "store.js", "content.js"],
-      "css": ["content.css"],
+      "matches": [
+        "https://superraregames.com/*",
+        "https://www.superraregames.com/*"
+      ],
+      "js": [
+        "keys.js",
+        "store.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://account.superraregames.com/*"
+      ],
+      "js": [
+        "account.js"
+      ],
+      "css": [
+        "account.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_title": "SRG Owned",
     "default_popup": "popup.html",
-    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
   },
-  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "srg-owned@personal",
       "strict_min_version": "142.0",
-      "data_collection_permissions": { "required": ["none"] }
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
     }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
   }
 }

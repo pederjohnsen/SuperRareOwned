@@ -28,6 +28,17 @@ test("keys", () => {
   assert.deepEqual(ids("Premium Packaging"), ["name:premiumpackaging|"]);
 });
 
+test("a steelbook isn't the game with the same number", () => {
+  assert.deepEqual(ids("[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)"), ["STEELBOOK:SRG#88|switch"]);
+  assert.deepEqual(ids("[Steelbook] SRG#88: Lost in Play (Switch)"), ids("[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)"));
+  const owned = K.withOwned("[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)", {}, true);
+  assert.equal(K.status("SRG#88: Lost in Play (Switch)", owned).owned, 0);
+  // neutral tags still don't matter
+  assert.deepEqual(ids("[Collector’s Edition] CE#12: Lil Gator Game (Switch)"), ["CE#12|switch"]);
+  assert.equal(K.parse("[CLUB] SRG x Moonstone Island T-Shirt").numbered, false);
+  assert.equal(K.parse("[CLUB] PS5#23: Tiny Terry's Turbo Trip (PS5)").numbered, true);
+});
+
 test("same number on different platforms doesn't match", () => {
   let owned = K.withOwned("[Deluxe Edition] DE#2: Cassette Beasts (Switch)", {}, true);
   assert.equal(K.status("[CLUB] - [Deluxe Edition] DE#2: Laika: Aged Through Blood (PS5)", owned).owned, 0);

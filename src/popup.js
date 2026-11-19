@@ -4,6 +4,13 @@
   const n = new Set(Object.values(owned).map((v) => v.t)).size;
   document.getElementById("count").textContent = n;
   document.getElementById("noun").textContent = n === 1 ? "game" : "games";
+  const { srgoImport } = await ext.storage.local.get("srgoImport");
+  const review = document.getElementById("review");
+  review.hidden = !srgoImport;
+  review.addEventListener("click", () => {
+    ext.runtime.openOptionsPage();
+    window.close();
+  });
   document.getElementById("manage").addEventListener("click", () => {
     ext.runtime.openOptionsPage();
     window.close();
