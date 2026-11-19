@@ -16,7 +16,9 @@
   const TRAILING_PARENS = /\(([^()]+)\)\s*$/;
   // Series codes are written in capitals: SRG#149, DE#2, CE#12, PS5 #17, PS4#5.
   // Case-sensitive on purpose, so "Volume #3" isn't read as a series.
-  const NUMBERED = /(?<![A-Za-z0-9])([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
+  // An optional leading code joins the series: "SW2 TC#04" (Switch 2 trading
+  // cards) is SW2TC#4, not the same as "TC#04".
+  const NUMBERED = /(?<![A-Za-z0-9])(?:([A-Z][A-Z0-9]{1,4})\s+)?([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
   const NUMBERED_ALL = new RegExp(NUMBERED.source, "g");
   const KNOWN_PLATFORM = /^(switch2?|ps[345]|psvita|vita|xbox[a-z0-9]*|pc|3ds|wiiu)$/;
 
@@ -81,9 +83,9 @@
     const ids = [];
     const seriesSeen = [];
     for (const nm of t.matchAll(NUMBERED_ALL)) {
-      const series = nm[1].toUpperCase();
+      const series = ((nm[1] || "") + nm[2]).toUpperCase();
       if (!seriesSeen.includes(series)) seriesSeen.push(series);
-      for (const part of nm[2].split(/\s*[\/&+,]\s*/)) {
+      for (const part of nm[3].split(/\s*[\/&+,]\s*/)) {
         const r = part.match(/^(\d+)\s*[-–]\s*(\d+)$/); // bundle ranges: SRG#158-160
         const a = parseInt(r ? r[1] : part, 10), b = r ? parseInt(r[2], 10) : a;
         for (let n = a; n <= b && n - a < 30; n++) {
@@ -112,11 +114,12 @@
 
   // Numbered series that aren't games: TC# is a release's trading card booster
   // pack ("TC#164: KILL KNIGHT - Trading Card Booster Pack").
-  const NOT_GAMES = new Set(["TC"]);
+  // (and "SW2 TC#04" for Switch 2), so any series ending in TC.
+  const NOT_GAME_SERIES = /TC$/;
 
   // A game release, as opposed to merch or other extras with or without a number.
   function isGame(parsed) {
-    return !!parsed.numbered && !parsed.series.every((x) => NOT_GAMES.has(x));
+    return !!parsed.numbered && !parsed.series.every((x) => NOT_GAME_SERIES.test(x));
   }
 
   function unitKey(u) {

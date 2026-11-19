@@ -107,6 +107,11 @@
     e.target.value = "";
   });
 
+  try {
+    const api = globalThis.chrome && globalThis.chrome.runtime && globalThis.chrome.runtime.id ? globalThis.chrome : globalThis.browser;
+    $("version").textContent = api.runtime.getManifest().version;
+  } catch {}
+
   S.onChange(reload);
   reload();
 })();

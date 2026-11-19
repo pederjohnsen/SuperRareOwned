@@ -6,6 +6,7 @@
     const ok = (o) => o && o.runtime && o.runtime.id && o.storage;
     return ok(g.browser) ? g.browser : ok(g.chrome) ? g.chrome : null;
   })(globalThis);
+  document.getElementById("version").textContent = "Version " + ext.runtime.getManifest().version;
   const owned = await globalThis.SRGOStore.load();
   const n = new Set(Object.values(owned).map((v) => v.t)).size;
   document.getElementById("count").textContent = n;

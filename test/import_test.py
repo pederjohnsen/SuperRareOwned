@@ -159,6 +159,8 @@ with sync_playwright() as p:
     def panel_on_list():
         expect(pg.locator(".srgo-account")).to_be_visible()
         expect(pg.locator(".srgo-account button.srgo-primary")).to_have_text("Import from all orders")
+        version = json.load(open(os.path.join(EXT, "manifest.json")))["version"]
+        expect(pg.locator(".srgo-account strong")).to_have_text("SRG Owned " + version)  # which copy is running
     check("panel on the orders page", panel_on_list)
     pg.screenshot(path=os.path.join(OUT, "account-orders.png"))
 

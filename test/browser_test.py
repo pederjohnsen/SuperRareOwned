@@ -1,5 +1,10 @@
 """Loads the unpacked extension in Chrome for Testing and runs it against mock
-superraregames.com pages (Shopify Dawn-style markup), served via request routing."""
+superraregames.com pages, served via request routing. The pages copy what the
+real store has (checked on the live site): every product card has its own
+Add to cart form; product pages also hold a hidden Shop Pay instalments form,
+a sticky Add to cart bar and hidden slider cards with forms; the quick view is
+a popup with the product page's own layout and a "View full details" link; and
+cart items are table rows."""
 import hashlib, json, os, sys, tempfile
 from playwright.sync_api import sync_playwright, expect
 
@@ -36,14 +41,27 @@ def card(handle):
       <div class="card__inner"><div class="card__media"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"></div></div>
       <div class="card__content"><div class="card__information"><h3 class="card__heading">
         <a href="/collections/club-26-products/products/{handle}" class="full-unstyled-link">{PRODUCTS[handle]}</a></h3>
-        <div class="price">£24.92</div></div></div></div></div></li>"""
+        <div class="price">£24.92</div>
+        <form action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></div></div></div></div></li>"""
+
+def quick_view(handle):
+    """The store's quick view: the product page layout in a popup."""
+    return f"""<quick-add-modal class="popup-modal" open><div class="popup-modal__content"><section><div class="grid">
+      <div class="col"><img src="data:," alt=""></div>
+      <div class="product__right-column-sticky"><h1 class="product__title">{PRODUCTS[handle]}</h1><p>£24.92</p>
+        <div class="payment_terms"><form class="installment" action="/cart/add" method="post"></form></div>
+        <div class="product__buttons"><product-form><form class="form" action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></product-form></div>
+        <a href="/products/{handle}" class="product__view-details">View full details</a></div></div></section></div></quick-add-modal>"""
 
 def page(body):
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>SRG mock</title>
     <style>body{{font-family:sans-serif;margin:0}} header{{padding:10px;background:#222;color:#fff}}
     ul.grid{{display:grid;grid-template-columns:repeat(4,240px);gap:16px;list-style:none;padding:16px}}
     .card__media img{{width:100%;height:auto;display:block}}</style></head>
-    <body><header><nav><a href="/products/srg-149-grapple-dogs-cosmic-canines-switch">Menu link</a></nav></header>
+    <body><header><nav><a href="/products/srg-149-grapple-dogs-cosmic-canines-switch">Menu link</a></nav>
+      <div class="slider" style="visibility:hidden;height:0;overflow:hidden"><div class="product-card">
+        <a href="/products/deluxe-edition-de-2-cassette-beasts-switch">Hidden slider card</a>
+        <form class="form" action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></div></div></header>
     <main>{body}</main></body></html>"""
 
 state = {"cart": []}
@@ -54,7 +72,8 @@ def handle_route(route):
     if path.startswith("/collections/club-26-products/products.json"):
         return route.fulfill(json={"products": [{"handle": h, "title": PRODUCTS[h]} for h in COLLECTION]})
     if path == "/collections/club-26-products":
-        return route.fulfill(content_type="text/html", body=page('<h1>Club Products 2026</h1><ul class="grid">' + "".join(card(h) for h in COLLECTION) + "</ul>"))
+        return route.fulfill(content_type="text/html", body=page('<h1>Club Products 2026</h1><ul class="grid">' + "".join(card(h) for h in COLLECTION) + "</ul>")
+                             .replace("</main>", "</main>" + quick_view("club-srg-149-grapple-dogs-cosmic-canines-switch")))
     if path.startswith("/products/") and path.endswith(".js"):
         h = path[len("/products/"):-3]
         if h in PRODUCTS:
@@ -64,12 +83,21 @@ def handle_route(route):
         h = path[len("/products/"):]
         rec = '<h2>Have you seen</h2><ul class="grid">' + card("deluxe-edition-de-2-cassette-beasts-switch") + "</ul>"
         return route.fulfill(content_type="text/html", body=page(
-            f'<div class="product"><nav class="breadcrumb"><a href="/products/{h}">{PRODUCTS[h]}</a></nav><h1>{PRODUCTS[h]}</h1><p>£37.20</p>'
-            f'<form action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></div>{rec}'))
+            f'<div class="product"><nav class="breadcrumb"><a href="/products/{h}">{PRODUCTS[h]}</a></nav>'
+            f'<div class="product__right-column-sticky"><h1>{PRODUCTS[h]}</h1><p>£37.20</p>'
+            f'<div class="payment_terms"><form class="installment" action="/cart/add" method="post"></form></div>'
+            f'<div class="product__buttons"><product-form><form class="form" action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></product-form></div></div>'
+            f'<div class="sticky-cart-button"><form class="form sticky-cart-button__form" action="/cart/add" method="post"><button type="submit" name="add">Add</button></form></div></div>{rec}'))
     if path == "/cart.js":
         return route.fulfill(json={"items": [{"handle": h, "product_title": PRODUCTS[h], "quantity": 1} for h in state["cart"]]})
-    if path in ("/cart", "/"):
-        return route.fulfill(content_type="text/html", body=page("<h1>Your cart</h1>"))
+    if path == "/cart":  # one table row per item, like the real cart
+        rows = "".join(f'<tr class="cart-item"><td class="cart-item__media"><a href="/products/{h}" class="image-hover-scaling__image">'
+                       f'<img src="data:," alt="" width="90" height="120" style="display:block;width:90px;height:120px;background:#ccc"></a></td>'
+                       f'<td class="cart-item__details"><a href="/products/{h}" class="cart-item__heading">{PRODUCTS[h]}</a></td></tr>' for h in state["cart"])
+        return route.fulfill(content_type="text/html", body=page(
+            f'<h1>Your cart</h1><form class="cart__contents" action="/cart" method="post"><table class="cart-items"><thead><tr><th>Product</th><th>Total</th></tr></thead><tbody>{rows}</tbody></table></form>'))
+    if path == "/":
+        return route.fulfill(content_type="text/html", body=page("<h1>Home</h1>"))
     return route.fulfill(status=404, body="")
 
 failures = []
@@ -96,20 +124,41 @@ with sync_playwright() as p:
     grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
 
     def toggles_on_listing():
-        expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 3)
+        expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(len(COLLECTION) - 3)
         # none on the double pack (a bundle) or the two Coming Soon! listings
         for t in ["Double Pack", "[CLUB] Coming Soon!", "SRG#149: Coming Soon!"]:
             expect(pg.locator("li.grid__item", has_text=t).locator(".srgo-toggle")).to_have_count(0)
     check("toggle only on single releases on the listing page", toggles_on_listing)
-    check("nav link isn't decorated", lambda: expect(pg.locator("header .srgo-toggle")).to_have_count(0))
+    check("menu link isn't decorated", lambda: expect(pg.locator("header nav .srgo-toggle, header nav .srgo-badge")).to_have_count(0))
 
     def mark_club_grapple():
         grapple.hover()
         grapple.locator(".srgo-toggle").click()
         expect(grapple.locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(grapple.locator(".card__media .srgo-badge")).to_have_count(1)  # on the cover, not by Add to cart
         expect(grapple).to_have_attribute("data-srgo-state", "owned")
         expect(pg).to_have_url(BASE + "/collections/club-26-products")  # click didn't navigate
-    check("marking a club card owned", mark_club_grapple)
+    check("marking a card owned (badge and button on the cover)", mark_club_grapple)
+
+    def toggle_clear_of_add_to_cart():
+        card_ = pg.locator("li.grid__item", has_text="Bad End Theater")
+        card_.hover()
+        t = card_.locator(".srgo-toggle").bounding_box()
+        b = card_.locator("form button[name=add]").bounding_box()
+        cover = card_.locator(".card__media").bounding_box()
+        assert t["y"] + t["height"] <= cover["y"] + cover["height"] + 1, (t, cover)  # inside the cover
+        assert t["y"] + t["height"] < b["y"], (t, b)  # above Add to cart
+    check("'I own this' sits on the cover, clear of Add to cart", toggle_clear_of_add_to_cart)
+
+    def quick_view_panel():
+        qv = pg.locator("quick-add-modal")
+        expect(qv.locator(".srgo-pdp .srgo-badge")).to_have_text("✓ Owned")
+        expect(qv.locator(".srgo-pdp .srgo-toggle")).to_have_text("Remove from owned")
+        expect(qv.locator(".product__buttons .srgo-pdp-warning")).to_have_text("You already own this.")
+        expect(qv.locator(".srgo-pdp-warning + form button[name=add]")).to_have_count(1)  # right above Add to cart
+        expect(qv.locator(".srgo-card, .srgo-card .srgo-badge")).to_have_count(0)  # "View full details" isn't a card
+        expect(pg.locator("main h1 + .srgo-pdp")).to_have_count(0)  # the listing's own heading isn't a product
+    check("quick view: badge, button and warning like the product page", quick_view_panel)
     def coming_soon():
         plain = pg.locator("li.grid__item", has_text="[CLUB] Coming Soon!")
         expect(plain).to_have_attribute("data-srgo-state", "none")
@@ -118,7 +167,7 @@ with sync_playwright() as p:
         expect(numbered.locator(".srgo-badge")).to_have_text("✓ Owned")  # owned through SRG#149
         expect(numbered.locator(".srgo-toggle")).to_have_count(0)  # can't be bought on its own
         pg.goto("https://superraregames.com/products/club-srg-149-coming-soon")
-        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("✓ Owned")
         expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_count(0)
         pg.goto("https://superraregames.com/collections/club-26-products")
     check("Coming Soon!: no button; numbered one shows owned via its number", coming_soon)
@@ -126,8 +175,12 @@ with sync_playwright() as p:
 
     def public_page_owned():
         pg.goto(BASE + "/products/srg-149-grapple-dogs-cosmic-canines-switch")
-        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("✓ Owned")
+        expect(pg.locator(".srgo-pdp-warning")).to_have_count(1)
         expect(pg.locator(".srgo-pdp-warning")).to_have_text("You already own this.")
+        # beside the real Add to cart: not the hidden instalments form, the sticky bar or a slider card's form
+        expect(pg.locator(".product__buttons .srgo-pdp-warning + form button[name=add]")).to_have_count(1)
+        expect(pg.locator("header .srgo-pdp-warning, .sticky-cart-button .srgo-pdp-warning")).to_have_count(0)
         expect(pg.locator(".breadcrumb .srgo-toggle")).to_have_count(0)
         expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "none")
         expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(0)  # no marking from recommendations
@@ -137,7 +190,7 @@ with sync_playwright() as p:
     def same_number_other_platform():
         pg.goto(BASE + "/products/deluxe-edition-de-2-cassette-beasts-switch")
         pg.locator(".srgo-pdp .srgo-toggle").click()
-        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("✓ Owned")
         pg.goto(BASE + "/collections/club-26-products")
         expect(pg.locator("li.grid__item", has_text="Laika")).to_have_attribute("data-srgo-state", "none")
     check("DE#2 Switch owned doesn't mark DE#2 PS5", same_number_other_platform)
@@ -147,6 +200,7 @@ with sync_playwright() as p:
         op = ctx.new_page()
         op.goto(f"chrome-extension://{eid}/options.html")
         expect(op.locator("#list li")).to_have_count(2)
+        expect(op.locator("#version")).to_have_text(json.load(open(os.path.join(EXT, "manifest.json")))["version"])
         op.fill("#add", "srg#107\nnonsense ###\nSRG#149")
         op.click("#add-btn")
         expect(op.locator("#add-result")).to_contain_text("Added 2")  # "nonsense ###" becomes a name key, so it's added too
@@ -159,6 +213,17 @@ with sync_playwright() as p:
         expect(op.locator("#list li")).to_have_count(3)
         op.close()
     check("options page add + bundle partial updates open tab live", options_add_and_bundle)
+
+    def single_cart_row():
+        state["cart"] = ["club-srg-149-grapple-dogs-cosmic-canines-switch"]
+        pg.goto(BASE + "/cart")
+        row = pg.locator("tr.cart-item")
+        expect(row).to_have_attribute("data-srgo-state", "owned")  # the row is the card, not the whole table
+        expect(row.locator(".cart-item__media a .srgo-badge.srgo-compact")).to_have_text("✓")  # a tick on the thumbnail
+        expect(pg.locator("table.srgo-card, form.srgo-card, thead .srgo-badge")).to_have_count(0)
+        expect(row.locator(".srgo-toggle")).to_have_count(0)  # no marking from the cart
+        state["cart"] = []
+    check("single cart item: tick on its thumbnail, not on the table", single_cart_row)
 
     def cart_warning():
         state["cart"] = ["club-srg-149-grapple-dogs-cosmic-canines-switch", "club-srg-148-bad-end-theater-switch"]

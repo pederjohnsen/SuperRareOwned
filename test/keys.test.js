@@ -111,3 +111,14 @@ test("trading card packs aren't games", () => {
   const owned = K.withOwned("[CLUB] SRG#164: KILL KNIGHT (Switch)", {}, true);
   assert.equal(K.status("[CLUB] TC#164: KILL KNIGHT - Trading Card Booster Pack", owned).owned, 0);
 });
+
+test("a leading code joins the series", () => {
+  assert.deepEqual(ids("SW2 TC#04: Little Rocket Lab - Trading Card Booster Pack"), ["SW2TC#4|"]);
+  assert.notDeepEqual(ids("SW2 TC#04: Little Rocket Lab - Trading Card Booster Pack"), ids("TC#04: Some Game - Trading Card Booster Pack"));
+  assert.equal(K.isGame(K.parse("SW2 TC#04: Little Rocket Lab - Trading Card Booster Pack")), false);
+  assert.deepEqual(ids("SW2#01: Minishoot' Adventures (Switch 2)"), ["SW2#1|switch2"]);
+  assert.equal(K.isGame(K.parse("SW2#01: Minishoot' Adventures (Switch 2)")), true);
+  // a code on its own before "#" still works
+  assert.deepEqual(ids("PS5 #21: Shovel Knight Dig (PS5)"), ["PS5#21|ps5"]);
+  assert.deepEqual(ids("PS5 Bundle #8: Haste & KILL KNIGHT (PS5)"), ["name:ps5bundle8hastekillknight|ps5"]);
+});

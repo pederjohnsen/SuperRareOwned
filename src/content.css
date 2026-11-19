@@ -3,31 +3,38 @@
 .srgo-card[data-srgo-state="owned"] img { filter: grayscale(1); opacity: 0.45; transition: opacity 0.15s; }
 .srgo-card[data-srgo-state="owned"]:hover img { opacity: 0.8; }
 
+/* On a card the badge sits on the cover's bottom-left: the store uses the top
+   corners for its own badges and the middle for its quick-view button. */
 .srgo-badge {
-  position: absolute; top: 8px; left: 8px; z-index: 5;
+  position: absolute; bottom: 8px; left: 8px; top: auto; z-index: 5;
   padding: 4px 10px; border-radius: 999px;
   font: 700 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0.02em;
   color: #fff; background: #15803d; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   pointer-events: none;
 }
 .srgo-badge.srgo-partial { background: #b45309; }
+.srgo-badge.srgo-compact { bottom: 4px; left: 4px; padding: 3px 7px; font-size: 12px; }
+.srgo-inline-block { display: inline-block !important; }
 .srgo-badge.srgo-inline { position: static; display: inline-block; box-shadow: none; }
+.srgo-pdp .srgo-badge.srgo-inline { line-height: 1.2; text-transform: none; }
 
+/* ...and the button on its bottom-right, shown on hover, clear of Add to cart */
 .srgo-toggle {
-  position: absolute; bottom: 8px; right: 8px; z-index: 6;
+  position: absolute; bottom: 8px; right: 8px; top: auto; z-index: 6;
   padding: 6px 10px; min-height: 32px; border: 1px solid rgba(0,0,0,0.2); border-radius: 6px;
   font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #111; background: rgba(255,255,255,0.95); cursor: pointer;
   opacity: 0; transition: opacity 0.15s;
 }
-.srgo-card:hover > .srgo-toggle, .srgo-toggle:focus-visible { opacity: 1; }
+.srgo-card:hover .srgo-toggle, .srgo-toggle:focus-visible { opacity: 1; }
 /* touch screens (Firefox for Android) can't hover, so the button is always shown */
 @media (hover: none) { .srgo-toggle { opacity: 1; min-height: 40px; padding: 8px 12px; } }
 .srgo-toggle:hover { background: #fff; border-color: #111; }
 .srgo-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 
 .srgo-pdp { display: flex; gap: 10px; align-items: center; margin: 8px 0 12px; }
-.srgo-pdp .srgo-toggle { position: static; opacity: 1; }
+.srgo-pdp .srgo-toggle { position: static; opacity: 1; text-transform: none; letter-spacing: normal; }
+.srgo-pdp-warning { text-transform: none; letter-spacing: normal; }
 
 .srgo-pdp-warning {
   margin: 0 0 12px; padding: 12px 14px; border-radius: 8px;

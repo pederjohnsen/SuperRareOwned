@@ -324,7 +324,12 @@
     panel.dataset.mode = mode;
     panel.setAttribute("role", "region");
     panel.setAttribute("aria-label", "SRG Owned");
-    panel.appendChild(el("strong", null, "SRG Owned"));
+    // the version shows which copy is running (an open tab keeps the old one until reloaded)
+    let version = "";
+    try {
+      version = alive() ? " " + ext.runtime.getManifest().version : "";
+    } catch {}
+    panel.appendChild(el("strong", null, "SRG Owned" + version));
     const msg = el("p", "srgo-account-msg", text);
     msg.setAttribute("aria-live", "polite");
     const row = el("div", "srgo-account-actions");

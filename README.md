@@ -2,7 +2,7 @@
 
 *Unofficial: not made by or affiliated with Super Rare Games.* [Privacy policy](PRIVACY.md)
 
-Browser extension (Chrome and Firefox) that marks Super Rare Games releases you already own, including the `[CLUB]` early-access copies, which are separate products with their own URLs.
+Browser extension (Chrome and Firefox) that marks Super Rare Games releases you already own, wherever they appear on the store.
 
 ## Install
 
@@ -12,14 +12,16 @@ Browser extension (Chrome and Firefox) that marks Super Rare Games releases you 
 
 ## Use
 
+The version you're running is shown in the panel on your orders page, the toolbar popup and at the bottom of the manage page.
+
 After installing or reloading a new version, reload any superraregames.com tabs you already had open: tabs left open keep the old copy, which can no longer reach the extension's storage (the panel says so if you try).
 
 
-- **Import from your orders:** open [your orders](https://account.superraregames.com/orders) and click **Import from all orders** in the SRG Owned panel. It loads every order, skips cancelled and refunded ones, reads each order's items (titles as bought, so [CLUB] products still count after they've left the store), then gives you an **Open the review** link to a review list: numbered games are ticked; merch and trading card packs (`TC#`) are listed under other items, unticked; and nothing is saved until you click **Add**. Unshipped pre-orders count as owned. On a single order's page, **Add this order's games** does the same for that order.
-- To mark a single release as owned (or remove it), hover its card on a store listing page and click **I own this**, or use the button under the title on its own product page. That's the only place the button appears: not in the cart, recommendations or elsewhere, and not on bundles or "Coming Soon!" listings. Badges still show everywhere.
+- **Import from your orders:** open [your orders](https://account.superraregames.com/orders) and click **Import from all orders** in the SRG Owned panel. It loads every order, skips cancelled and refunded ones, reads each order's items (titles as bought, so products that have since left the store still count), then gives you an **Open the review** link to a review list: numbered games are ticked; merch and trading card packs (`TC#`) are listed under other items, unticked; and nothing is saved until you click **Add**. Unshipped pre-orders count as owned. On a single order's page, **Add this order's games** does the same for that order.
+- To mark a single release as owned (or remove it), hover its card on a store listing page and click **I own this** at the bottom of the cover, or use the button under the title on its product page or in its quick view. That's the only place the button appears: not in the cart, recommendations or elsewhere, and not on bundles or "Coming Soon!" listings. Badges still show everywhere.
 - Or click the toolbar icon → **Manage owned games** and paste titles or numbers (`SRG#149`, `PS5#17`, `DE#2 (Switch)`), one per line.
-- Owned games are greyed out with a green **✓ Owned** badge. Bundles you partly own show "1 of 2 owned".
-- Product pages you own show **You already own this.** above Add to cart.
+- Owned games are greyed out with a green **✓ Owned** badge on the bottom-left of the cover (the store keeps its own badges in the top corners). Bundles you partly own show "1 of 2 owned". Small thumbnails get just a ✓.
+- Product pages and quick views of games you own show **You already own this.** above Add to cart.
 - If your cart holds something you own, a red panel lists it on every page of the store (cart and checkout included). Dismiss hides it until the cart changes.
 - The list syncs through your browser account (Chrome or Firefox sync). Export/Import on the manage page for backups or moving between browsers.
 

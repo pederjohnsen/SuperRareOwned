@@ -6,9 +6,9 @@ Everything to paste into the Chrome Web Store and Firefox Add-ons (AMO) forms. S
 
 **Name** (from the manifest): SRG Owned (unofficial)
 
-**Short description / summary** (Chrome uses the manifest's 128-character description; AMO allows 250):
+**Short description / summary** (Chrome uses the manifest's description, up to 132 characters; AMO allows 250):
 
-> Marks Super Rare Games releases you already own, including [CLUB] early-access copies, warns when they're in your cart, and imports them from your order history. Unofficial.
+> Marks Super Rare Games releases you already own, warns before you buy one twice, and imports them from your order history. Unofficial.
 
 **Category:** Shopping
 
@@ -21,14 +21,13 @@ Everything to paste into the Chrome Web Store and Firefox Add-ons (AMO) forms. S
 ```
 Never buy the same Super Rare Games release twice in the rush of a launch or a sale.
 
-SRG Owned marks the games you already own wherever they appear on superraregames.com: collection pages, search results, recommendations, product pages and your cart.
+SRG Owned marks the games you already own wherever they appear on superraregames.com: store pages, search results, recommendations, product pages, quick view and your cart.
 
 • Owned games are greyed out with a green "Owned" badge. Bundles you partly own show "1 of 2 owned".
-• Works with Club early-access ([CLUB]) products, which are separate listings from the public ones: owning either copy marks both.
-• Product pages for games you own say "You already own this" above Add to cart.
+• Product pages and quick view say "You already own this" above Add to cart for games you own.
 • A warning lists anything in your cart that you already own.
 • Import your owned games from your Super Rare Games order history in one click. You review the list before anything is saved, cancelled orders are skipped, and merch is left unticked.
-• Mark single releases yourself with "I own this" on store listing pages and product pages.
+• Mark single releases yourself with "I own this" on store pages, product pages and quick view.
 • Matches by release number and platform (SRG#, PS4#, PS5#, Deluxe and Collector's Editions), so the Switch and PS5 versions of a game are kept apart, and steelbooks aren't confused with the game.
 • Your list syncs through your browser account. Export and import it as a file for backups.
 
@@ -39,7 +38,7 @@ SRG Owned is an unofficial tool. It is not made by or affiliated with Super Rare
 
 **Screenshot captions** (files in this folder, 1280×800):
 
-1. `1-collection.png`: Owned games greyed out with a badge on a store listing, including [CLUB] copies.
+1. `1-collection.png`: Owned games greyed out with a badge on a store page.
 2. `2-product.png`: "You already own this" on the product page of a game you own.
 3. `3-cart.png`: The cart warning when a game you own is in your cart.
 4. `4-import.png`: Importing from your order history: review before anything is saved.
@@ -83,7 +82,7 @@ SRG Owned is an unofficial tool. It is not made by or affiliated with Super Rare
 ```
 No build step: the uploaded files are the source (https://github.com/pederjohnsen/SuperRareOwned, src/).
 
-The extension only runs on superraregames.com and its subdomains. To try it without an account: open https://superraregames.com/collections/all, hover a single-release product card and click "I own this"; the card gets an "Owned" badge, and its product page shows "You already own this". Adding an owned game to the cart shows a warning.
+The extension only runs on superraregames.com and its subdomains. To try it without an account: open https://superraregames.com/collections/all, hover a single-release product card and click "I own this" at the bottom of its cover; the card gets an "Owned" badge, and its product page shows "You already own this". Adding an owned game to the cart shows a warning.
 
 The order import (account.superraregames.com/orders) needs a Super Rare Games customer account; it reads order numbers, statuses and item titles from the user's own order pages after they click "Import from all orders", and the user confirms the list on the extension's manage page before anything is saved.
 
