@@ -29,7 +29,7 @@ Titles come from Shopify's `/products/<handle>.js` (and `/collections/<c>/produc
 ## Tests
 
 ```
-node --test test/keys.test.js       # title matching
+node --test test/keys.test.js test/manifest.test.js   # title matching, manifest
 python3 test/browser_test.py        # extension in Chrome for Testing against mock store pages
 python3 test/import_test.py         # order import against mock account pages (test/fixtures)
 REAL_ORDERS=orders.html REAL_ORDER=order.html python3 test/import_test.py   # your own saved account pages

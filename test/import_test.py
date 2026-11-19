@@ -120,8 +120,11 @@ with sync_playwright() as p:
         for t in ctx.pages:  # an open manage page would be focused instead of a new tab
             if t.url.startswith("chrome-extension://"):
                 t.close()
-        with ctx.expect_page(timeout=60000) as new_tab:
-            pg.locator(".srgo-account button.srgo-primary").click()
+        pg.locator(".srgo-account button.srgo-primary").click()
+        link = pg.locator(".srgo-account a.srgo-link")
+        expect(link).to_have_text("Open the review", timeout=60000)
+        with ctx.expect_page(timeout=15000) as new_tab:
+            link.click()
         review = new_tab.value
         review.wait_for_load_state()
         assert review.url.startswith(f"chrome-extension://{eid}/options.html"), review.url

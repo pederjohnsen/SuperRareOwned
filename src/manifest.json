@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SRG Owned",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Marks Super Rare Games releases you already own, including club early-access copies, warns when they're in your cart, and imports them from your order history.",
   "icons": {
     "16": "icons/16.png",
@@ -68,10 +68,14 @@
       }
     }
   },
-  "background": {
-    "service_worker": "background.js",
-    "scripts": [
-      "background.js"
-    ]
-  }
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "options.html"
+      ],
+      "matches": [
+        "https://account.superraregames.com/*"
+      ]
+    }
+  ]
 }

@@ -15,3 +15,8 @@
 .srgo-account button.srgo-primary { background: #15803d; border-color: #15803d; color: #fff; }
 .srgo-account button:disabled { opacity: 0.6; cursor: progress; }
 .srgo-account button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.srgo-account a.srgo-link {
+  display: inline-flex; align-items: center; padding: 6px 12px; min-height: 36px; box-sizing: border-box; border-radius: 6px;
+  background: #15803d; color: #fff; font: 600 14px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; text-decoration: none;
+}
+.srgo-account a.srgo-link:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }

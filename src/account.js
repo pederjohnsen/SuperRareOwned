@@ -79,9 +79,16 @@
 
   async function handOver(payload) {
     await ext.storage.local.set({ srgoImport: { at: Date.now(), ...payload } });
-    try {
-      await ext.runtime.sendMessage({ type: "srgo-open-import" });
-    } catch {}
+  }
+
+  // A link the user clicks, rather than opening a tab ourselves: browsers block
+  // tabs opened long after the click, and loading every order takes a while.
+  function reviewLink() {
+    const a = el("a", "srgo-primary srgo-link", "Open the review");
+    a.href = ext.runtime.getURL("options.html");
+    a.target = "_blank";
+    a.rel = "noopener";
+    return a;
   }
 
   // ---------- panel ----------
@@ -119,7 +126,7 @@
           const res = await loadAllOrders((n) => (msg.textContent = `Loading your orders… ${n} so far.`));
           const orders = readOrdersList();
           const skipped = orders.filter((o) => SKIP_STATUS.test(o.status)).length;
-          msg.textContent = `Found ${orders.length} orders${skipped ? ` (${skipped} cancelled or refunded, skipped)` : ""}. Opening the review…`;
+          msg.textContent = `Found ${orders.length} orders${skipped ? ` (${skipped} cancelled or refunded, skipped)` : ""}.`;
           await handOver({ source: "orders", complete: res.complete, orders });
         } else {
           const order = readOrderPage();
@@ -128,10 +135,11 @@
             go.disabled = false;
             return;
           }
-          msg.textContent = `Found ${order.items.length} items. Opening the review…`;
+          msg.textContent = `Found ${order.items.length} items.`;
           await handOver({ source: "order", complete: true, orders: [order] });
         }
-        msg.textContent += " If nothing opened, click the SRG Owned icon in your toolbar.";
+        go.replaceWith(reviewLink());
+        return;
       } catch (e) {
         msg.textContent = "Something went wrong: " + e.message;
       }
