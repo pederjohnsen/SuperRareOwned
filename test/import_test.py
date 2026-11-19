@@ -41,6 +41,13 @@ def ext_id(path):
     h = hashlib.sha256(path.encode()).hexdigest()[:32]
     return "".join(chr(ord("a") + int(c, 16)) for c in h)
 
+def chrome_options():
+    """Chrome for Testing locally; CHROME_PATH="" uses Playwright's Chromium (CI).
+    Branded Chrome no longer loads unpacked extensions from the command line."""
+    exe = os.environ.get("CHROME_PATH", "/usr/bin/google-chrome")
+    return {"executable_path": exe} if exe else {"channel": "chromium"}
+
+
 # variant id -> (handle, title); "json" = in /products.json, "redirect" = only via /variants/<id>
 # ([CLUB] variants 111, 112, 113, 117, 999 are deliberately absent: taken off the store)
 VARIANTS = {
@@ -115,7 +122,7 @@ def check(name, fn):
 
 with sync_playwright() as p:
     ctx = p.chromium.launch_persistent_context(
-        tempfile.mkdtemp(), executable_path="/usr/bin/google-chrome", headless=False,
+        tempfile.mkdtemp(), **chrome_options(), headless=False,
         args=["--headless=new", f"--disable-extensions-except={EXT}", f"--load-extension={EXT}", "--no-sandbox"],
         viewport={"width": 1100, "height": 900})
     ctx.route("https://superraregames.com/**", store)

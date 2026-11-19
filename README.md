@@ -1,5 +1,7 @@
 # SRG Owned
 
+*Unofficial: not made by or affiliated with Super Rare Games.* [Privacy policy](PRIVACY.md)
+
 Browser extension (Chrome and Firefox) that marks Super Rare Games releases you already own, including the `[CLUB]` early-access copies, which are separate products with their own URLs.
 
 ## Install
@@ -40,3 +42,9 @@ SERVER=1 python3 test/import_test.py   # order import, order pages sent with the
 SERVER=0 python3 test/import_test.py   # order import, items only shown by the app
 REAL_ORDERS=orders.html REAL_ORDER=order.html python3 test/import_test.py   # your own saved account pages
 ```
+
+## Releasing and store listings
+
+- Every push runs the tests and the Firefox add-on lint on GitHub Actions (`.github/workflows/ci.yml`).
+- To release: bump `version` in `src/manifest.json`, commit, then `git tag v1.0.0 && git push --tags`. The workflow checks the tag matches the manifest, builds `srg-owned-1.0.0.zip` and attaches it to a GitHub release. Upload that zip to the stores.
+- Store texts, permission justifications, data disclosures, screenshots and the promo tile: [`docs/store/`](docs/store/listing.md). Regenerate the screenshots with `python3 tools/screenshots.py`.

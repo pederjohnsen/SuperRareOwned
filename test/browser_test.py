@@ -11,6 +11,13 @@ def ext_id(path):
     h = hashlib.sha256(path.encode()).hexdigest()[:32]
     return "".join(chr(ord("a") + int(c, 16)) for c in h)
 
+def chrome_options():
+    """Chrome for Testing locally; CHROME_PATH="" uses Playwright's Chromium (CI).
+    Branded Chrome no longer loads unpacked extensions from the command line."""
+    exe = os.environ.get("CHROME_PATH", "/usr/bin/google-chrome")
+    return {"executable_path": exe} if exe else {"channel": "chromium"}
+
+
 PRODUCTS = {
     "club-srg-149-grapple-dogs-cosmic-canines-switch": "[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)",
     "club-srg-148-bad-end-theater-switch": "[CLUB] SRG#148: Bad End Theater (Switch)",
@@ -75,7 +82,7 @@ def check(name, fn):
 with sync_playwright() as p:
     profile = tempfile.mkdtemp()
     ctx = p.chromium.launch_persistent_context(
-        profile, executable_path="/usr/bin/google-chrome", headless=False,
+        profile, **chrome_options(), headless=False,
         args=["--headless=new", f"--disable-extensions-except={EXT}", f"--load-extension={EXT}", "--no-sandbox"],
         viewport={"width": 1100, "height": 900})
     ctx.route("https://superraregames.com/**", handle_route)
@@ -177,6 +184,24 @@ with sync_playwright() as p:
         expect(pg.locator(".srgo-pdp-warning")).to_have_count(0)
         expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_text("I own this")
     check("unmark from product page", unmark)
+
+    def backup_round_trip():
+        op = ctx.new_page()
+        op.goto(f"chrome-extension://{eid}/options.html")
+        n = op.locator("#list li").count()
+        with op.expect_download() as dl:
+            op.click("#export")
+        path = dl.value.path()
+        data = json.load(open(path))
+        assert data["app"] == "srg-owned" and len(data["owned"]) == n, data
+        # remove one, then restore it from the backup
+        op.locator("#list li").first.get_by_role("button").click()
+        expect(op.locator("#list li")).to_have_count(n - 1)
+        op.set_input_files("#backup-file", path)
+        expect(op.locator("#backup-result")).to_have_text("Imported 1 new.")
+        expect(op.locator("#list li")).to_have_count(n)
+        op.close()
+    check("backup export and import round trip", backup_round_trip)
 
     def popup():
         pp = ctx.new_page()

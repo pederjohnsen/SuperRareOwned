@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "SRG Owned",
-  "version": "0.3.3",
-  "description": "Marks Super Rare Games releases you already own, including club early-access copies, warns when they're in your cart, and imports them from your order history.",
+  "name": "SRG Owned (unofficial)",
+  "short_name": "SRG Owned",
+  "version": "1.0.0",
+  "description": "Marks Super Rare Games releases you own, including [CLUB] copies, warns if they're in your cart, and imports your order history.",
+  "homepage_url": "https://github.com/pederjohnsen/SuperRareOwned",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",
@@ -45,6 +47,16 @@
       "run_at": "document_idle"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "options.html"
+      ],
+      "matches": [
+        "https://account.superraregames.com/*"
+      ]
+    }
+  ],
   "action": {
     "default_title": "SRG Owned",
     "default_popup": "popup.html",
@@ -66,16 +78,9 @@
           "none"
         ]
       }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
     }
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "options.html"
-      ],
-      "matches": [
-        "https://account.superraregames.com/*"
-      ]
-    }
-  ]
+  }
 }

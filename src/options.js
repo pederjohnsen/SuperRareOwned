@@ -84,7 +84,7 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   });
 
-  $("import").addEventListener("change", async (e) => {
+  $("backup-file").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
