@@ -64,8 +64,18 @@ def quick_view(handle):
         <div class="product__buttons"><product-form><form class="form" action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></product-form></div>
         <a href="/products/{handle}" class="product__view-details">View full details</a></div></div></section></div></quick-add-modal>"""
 
+# Like the store's per-release themes: colours, capitals, fonts and spacing on
+# everything in the product info column, and a couple of !important rules.
+THEME = """
+.product__right-column-sticky, .product__right-column-sticky * { color: #2dd4bf; text-transform: uppercase; font-family: Georgia, serif;
+  letter-spacing: 3px; font-weight: 300; line-height: 3; font-style: italic; text-shadow: 0 0 2px #000; }
+.product__right-column-sticky div { background: transparent; border: 0; padding: 0; margin: 0; border-radius: 0; display: grid; }
+div { text-transform: uppercase !important; }
+button { font-size: 30px !important; }
+"""
+
 def page(body):
-    return f"""<!doctype html><html><head><meta charset="utf-8"><title>SRG mock</title>
+    return f"""<!doctype html><html><head><meta charset="utf-8"><title>SRG mock</title><style>{THEME}</style>
     <style>body{{font-family:sans-serif;margin:0}} header{{padding:10px;background:#222;color:#fff}}
     ul.grid{{display:grid;grid-template-columns:repeat(4,240px);gap:16px;list-style:none;padding:16px}}
     .card__media img{{width:100%;height:auto;display:block}}</style></head>
@@ -205,6 +215,24 @@ with sync_playwright() as p:
         expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "none")
         expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(0)  # no marking from recommendations
     check("public product page shows owned + warning; no toggle on recommendations", public_page_owned)
+
+    def styles_hold_against_theme():
+        # the page's theme mustn't change how the extension's elements look
+        def css(loc, *props):
+            return loc.evaluate("(el, props) => { const cs = getComputedStyle(el); return props.map(p => cs.getPropertyValue(p)); }", list(props))
+        w = pg.locator(".product__buttons .srgo-pdp-warning")
+        got = dict(zip(["color", "background-color", "text-transform", "font-weight", "font-size", "letter-spacing", "font-style", "border-top-width", "border-top-color", "padding-left", "border-top-left-radius", "display", "text-shadow"],
+                       css(w, "color", "background-color", "text-transform", "font-weight", "font-size", "letter-spacing", "font-style", "border-top-width", "border-top-color", "padding-left", "border-top-left-radius", "display", "text-shadow")))
+        assert got == {"color": "rgb(127, 29, 29)", "background-color": "rgb(254, 226, 226)", "text-transform": "none", "font-weight": "700", "font-size": "16px",
+                       "letter-spacing": "normal", "font-style": "normal", "border-top-width": "2px", "border-top-color": "rgb(220, 38, 38)", "padding-left": "14px",
+                       "border-top-left-radius": "8px", "display": "block", "text-shadow": "none"}, got
+        assert "Georgia" not in css(w, "font-family")[0], css(w, "font-family")
+        badge = pg.locator(".srgo-pdp .srgo-badge")
+        assert css(badge, "color", "background-color", "text-transform", "font-size") == ["rgb(255, 255, 255)", "rgb(21, 128, 61)", "none", "13px"], css(badge, "color", "background-color", "text-transform", "font-size")
+        btn = pg.locator(".srgo-pdp .srgo-toggle")
+        assert css(btn, "color", "text-transform", "font-size", "letter-spacing", "opacity") == ["rgb(17, 17, 17)", "none", "12px", "normal", "1"], css(btn, "color", "text-transform", "font-size", "letter-spacing", "opacity")
+        pg.screenshot(path=os.path.join(OUT, "product-themed.png"))
+    check("warning, badge and button keep their design on a themed release page", styles_hold_against_theme)
     pg.screenshot(path=os.path.join(OUT, "product.png"))
 
     def same_number_other_platform():
