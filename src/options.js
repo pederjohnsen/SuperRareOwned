@@ -114,4 +114,10 @@
 
   S.onChange(reload);
   reload();
+  (async () => {
+    const C = globalThis.SRGOCatalog;
+    await C.load(async (url) => (await fetch(url, { credentials: "omit" })).json(), "https://superraregames.com");
+    const migrated = C.migrateBundles(await S.load());
+    if (migrated) await S.save(migrated);
+  })();
 })();

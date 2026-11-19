@@ -85,6 +85,11 @@
 
   async function show(data) {
     const run = ++running;
+    $("import").hidden = false;
+    $("import-status").textContent = "Getting the store's product list…";
+    // so bundles count as the releases in them
+    await globalThis.SRGOCatalog.load(async (url) => getJson(url), STORE);
+    if (run !== running) return;
     const owned = await S.load();
     $("import").hidden = false;
     $("import-notes").replaceChildren();
@@ -191,7 +196,12 @@
         mine.push(cb);
         boxes.push(cb);
         const nums = [...r.orders];
-        lab.append(cb, el("span", "t", r.parsed.title), el("span", "o", nums.length > 1 ? `${nums.length} orders` : "Order #" + nums[0]));
+        const t = el("span", "t", r.parsed.title);
+        if (r.parsed.bundle) {
+          t.appendChild(el("br"));
+          t.appendChild(el("span", "o", "Includes " + r.parsed.bundle.join(", ")));
+        }
+        lab.append(cb, t, el("span", "o", nums.length > 1 ? `${nums.length} orders` : "Order #" + nums[0]));
         if (r.st.owned > 0) lab.append(el("span", "o", `(${r.st.owned} of ${r.st.total} owned)`));
         li.appendChild(lab);
         ul.appendChild(li);

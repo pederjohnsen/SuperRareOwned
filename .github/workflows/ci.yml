@@ -18,7 +18,7 @@ jobs:
           node-version: 22
 
       - name: Title matching and manifest tests
-        run: node --test test/keys.test.js test/manifest.test.js
+        run: node --test test/keys.test.js test/bundles.test.js test/manifest.test.js
 
       - name: Firefox add-on lint (fails on warnings too)
         run: npx --yes web-ext@8 lint --source-dir src --warnings-as-errors
@@ -52,17 +52,21 @@ jobs:
       - name: Check the tag matches the manifest version
         run: |
           version=$(node -p "require('./src/manifest.json').version")
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+          # accept v1.0.4 and v.1.0.4
+          tagged="${GITHUB_REF_NAME#v}"
+          tagged="${tagged#.}"
+          if [ "$tagged" != "$version" ]; then
             echo "Tag $GITHUB_REF_NAME doesn't match manifest version $version" >&2
             exit 1
           fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Build the store package
         run: |
           cd src
-          zip -r "../srg-owned-${GITHUB_REF_NAME#v}.zip" . -x '.*'
+          zip -r "../srg-owned-$VERSION.zip" . -x '.*'
 
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" srg-owned-*.zip --title "SRG Owned ${GITHUB_REF_NAME#v}" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" "srg-owned-$VERSION.zip" --title "SRG Owned $VERSION" --generate-notes

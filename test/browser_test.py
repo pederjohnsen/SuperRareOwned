@@ -5,7 +5,7 @@ Add to cart form; product pages also hold a hidden Shop Pay instalments form,
 a sticky Add to cart bar and hidden slider cards with forms; the quick view is
 a popup with the product page's own layout and a "View full details" link; and
 cart items are table rows."""
-import hashlib, json, os, sys, tempfile
+import hashlib, json, os, re, sys, tempfile
 from playwright.sync_api import sync_playwright, expect
 
 EXT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -34,6 +34,17 @@ PRODUCTS = {
     "club-srg-149-coming-soon": "[CLUB] SRG#149: Coming Soon!",
     "deluxe-edition-de-2-cassette-beasts-switch": "[Deluxe Edition] DE#2: Cassette Beasts (Switch)",
 }
+# a bundle and what's in it (real titles), on their own listing page
+BUNDLE_SET = {
+    "wax-heads-switch-game-vinyl-bundle": ("Wax Heads: Switch Game & Vinyl (Bundle)", "Switch"),
+    "srg-162-waxheads-switch": ("SRG#163: Wax Heads (Switch)", "Switch"),
+    "wax-heads-deluxe-double-vinyl": ("Wax Heads (Deluxe Double Vinyl)", "Merch"),
+    "pb-49-the-golden-idol-saga-game-162-game-163-switch": ("PB#49: The Golden Idol Saga, Escape from Ever After, Wax Heads (Switch)", "Switch"),
+    "srg-161-the-golden-idol-saga-switch": ("SRG#161: The Golden Idol Saga (Switch)", "Switch"),
+    "srg-162-escape-from-ever-after-switch": ("SRG#162: Escape from Ever After (Switch)", "Switch"),
+}
+for h, (t, _) in BUNDLE_SET.items():
+    PRODUCTS[h] = t
 COLLECTION = [h for h in PRODUCTS if h.startswith(("club-", "copy-of"))]
 
 def card(handle):
@@ -69,6 +80,15 @@ state = {"cart": []}
 def handle_route(route):
     url = route.request.url
     path = url.split("superraregames.com", 1)[1].split("?")[0]
+    if path == "/products.json":  # the store's whole product list, which bundles are worked out from
+        page_no = int((re.search(r"page=(\d+)", url) or [0, 1])[1])
+        items = [{"handle": h, "title": t, "product_type": ty, "tags": []} for h, (t, ty) in BUNDLE_SET.items()]
+        items += [{"handle": h, "title": t, "product_type": "Switch", "tags": []} for h, t in PRODUCTS.items() if h not in BUNDLE_SET]
+        return route.fulfill(json={"products": items if page_no == 1 else []})
+    if path == "/collections/wax-heads":
+        return route.fulfill(content_type="text/html", body=page('<h1>Wax Heads</h1><ul class="grid">' + "".join(card(h) for h in BUNDLE_SET) + "</ul>"))
+    if path.startswith("/collections/wax-heads/products.json"):
+        return route.fulfill(json={"products": [{"handle": h, "title": t} for h, (t, _) in BUNDLE_SET.items()]})
     if path.startswith("/collections/club-26-products/products.json"):
         return route.fulfill(json={"products": [{"handle": h, "title": PRODUCTS[h]} for h in COLLECTION]})
     if path == "/collections/club-26-products":
@@ -274,6 +294,36 @@ with sync_playwright() as p:
         expect(pp.locator("#count")).to_have_text("2")
         pp.close()
     check("popup count", popup)
+
+    def bundles():
+        pg.goto(BASE + "/collections/wax-heads")
+        bundle = pg.locator("li.grid__item", has_text="Switch Game & Vinyl")
+        game = pg.locator("li.grid__item", has_text="SRG#163")
+        vinyl = pg.locator("li.grid__item", has_text="Deluxe Double Vinyl")
+        expect(bundle.locator(".srgo-toggle")).to_have_count(0)  # a bundle isn't marked by hand
+        game.hover()
+        game.locator(".srgo-toggle").click()
+        expect(bundle.locator(".srgo-badge")).to_have_text("1 of 2 owned")  # own the game: half the bundle
+        vinyl.hover()
+        vinyl.locator(".srgo-toggle").click()
+        expect(bundle.locator(".srgo-badge")).to_have_text("✓ Owned")  # and the vinyl: the whole bundle
+        expect(pg.locator("li.grid__item", has_text="PB#49").locator(".srgo-badge")).to_have_text("1 of 3 owned")  # SRG#163 is in PB#49 too
+    check("bundles: owning the game and the vinyl separately owns the bundle", bundles)
+
+    def bundle_owns_contents():
+        op = ctx.new_page()
+        op.goto(f"chrome-extension://{eid}/options.html")
+        # an old-style entry: the bundle stored under its own number
+        op.fill("#add", "PB#49: The Golden Idol Saga, Escape from Ever After, Wax Heads (Switch)")
+        op.click("#add-btn")
+        expect(op.locator("#list li", has_text="Escape from Ever After")).to_have_count(1)  # stored as what's inside
+        expect(op.locator("#list li", has_text="PB#49")).to_have_count(0)
+        op.close()
+        pg.goto(BASE + "/collections/wax-heads")
+        expect(pg.locator("li.grid__item", has_text="SRG#162").locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(pg.locator("li.grid__item", has_text="SRG#161").locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(pg.locator("li.grid__item", has_text="PB#49").locator(".srgo-badge")).to_have_text("✓ Owned")
+    check("owning a bundle owns the releases in it", bundle_owns_contents)
 
     check("no page errors", lambda: (_ for _ in ()).throw(AssertionError("; ".join(errors))) if errors else None)
     ctx.close()

@@ -1,0 +1,673 @@
+[
+{
+"title": "SW2 TC#03: Haste - Trading Card Pack",
+"type": "Trading Cards",
+"tags": [
+"Haste",
+"Switch 2"
+]
+},
+{
+"title": "SW2 TC#04: Little Rocket Lab - Trading Card Pack",
+"type": "Trading Cards",
+"tags": [
+"Little Rocket Lab",
+"Switch 2"
+]
+},
+{
+"title": "SW2#03: Haste",
+"type": "Switch 2",
+"tags": [
+"Haste",
+"Switch 2"
+]
+},
+{
+"title": "SW2#04: Little Rocket Lab - Nintendo Switch 2 Edition",
+"type": "Switch 2",
+"tags": [
+"Little Rocket Lab",
+"Switch 2"
+]
+},
+{
+"title": "[Special Edition] SE#01: Minishoot' Adventures - Nintendo Switch 2 Edition",
+"type": "Special Edition",
+"tags": [
+"Minishoot' Adventures",
+"Switch 2"
+]
+},
+{
+"title": "[Special Edition] SE#02: The Midnight Walk",
+"type": "Special Edition",
+"tags": [
+"Switch 2",
+"The Midnight Walk"
+]
+},
+{
+"title": "[Special Edition] SE#03: Haste",
+"type": "Special Edition",
+"tags": [
+"Haste",
+"Switch 2"
+]
+},
+{
+"title": "SW2 TC#01: Minishoot' Adventures - Trading Card Pack",
+"type": "Trading Cards",
+"tags": [
+"Minishoot' Adventures",
+"Switch 2"
+]
+},
+{
+"title": "Sw2 TC#02: The Midnight Walk - Trading Card Pack",
+"type": "Trading Cards",
+"tags": [
+"Switch 2",
+"The Midnight Walk"
+]
+},
+{
+"title": "SW2#01: Minishoot' Adventures - Nintendo Switch 2 Edition",
+"type": "Switch 2",
+"tags": [
+"Minishoot' Adventures",
+"Switch 2"
+]
+},
+{
+"title": "Sw2#02: The Midnight Walk",
+"type": "Switch 2",
+"tags": [
+"Switch 2",
+"The Midnight Walk"
+]
+},
+{
+"title": "PS5#32: Haste (PS5)",
+"type": "PlayStation",
+"tags": [
+"Haste",
+"PS5"
+]
+},
+{
+"title": "PS5#33: KILL KNIGHT (PS5)",
+"type": "PlayStation",
+"tags": [
+"Kill Knight",
+"PS5"
+]
+},
+{
+"title": "SRG#164: KILL KNIGHT (Switch)",
+"type": "Switch",
+"tags": [
+"Kill Knight"
+]
+},
+{
+"title": "TC#164: KILL KNIGHT - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Kill Knight"
+]
+},
+{
+"title": "TC#161: The Golden Idol Saga - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Golden Idol"
+]
+},
+{
+"title": "TC#162: Escape from Ever After - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Escape from Ever After"
+]
+},
+{
+"title": "TC#163: Wax Heads - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Wax Heads"
+]
+},
+{
+"title": "SRG#161: The Golden Idol Saga (Switch)",
+"type": "Switch",
+"tags": [
+"Golden Idol"
+]
+},
+{
+"title": "[Deluxe Edition] DE#10: The Golden Idol Saga (Switch)",
+"type": "Deluxe Edition",
+"tags": [
+"Golden Idol",
+"Switch"
+]
+},
+{
+"title": "SRG#162: Escape from Ever After (Switch)",
+"type": "Switch",
+"tags": [
+"Escape from Ever After"
+]
+},
+{
+"title": "PS5#30: Escape from Ever After (PS5)",
+"type": "PlayStation",
+"tags": [
+"Escape from Ever After",
+"PS5"
+]
+},
+{
+"title": "SRG#163: Wax Heads (Switch)",
+"type": "Switch",
+"tags": [
+"Wax Heads"
+]
+},
+{
+"title": "Wax Heads (Deluxe Double Vinyl)",
+"type": "Merch",
+"tags": [
+"Wax Heads"
+]
+},
+{
+"title": "TC#158: Chained Echoes Complete Edition - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Chained Echoes"
+]
+},
+{
+"title": "TC#159: Sticky Business - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Sticky Business"
+]
+},
+{
+"title": "TC#160: Little Misfortune - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": [
+"Little Misfortune"
+]
+},
+{
+"title": "PS5#27: Home Safety Hotline (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5#28: Bloodshed (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "[CLUB] PS5#28: Bloodshed (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5#29: Platypus Reclayed (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "SRG#155: Home Safety Hotline (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#156: Bloodshed (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#157: Platypus Reclayed (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[Deluxe Edition] DE#8: Out of Sight (Switch)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "[CLUB] [Deluxe Edition] DE#8: Out of Sight (Switch)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "SRG#152: Out of Sight (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#153: Savant - Ascent REMIX (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[CLUB] SRG#153: Savant - Ascent REMIX (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "TC#153: Savant - Ascent REMIX - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "PS5 #21: Shovel Knight Dig (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5 #22: Dark Deity 2 (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5 #19: Post Trauma (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5 #20: Dungeons of Hinterberg (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "TC#137: Vigil: The Longest Night - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#138: Great God Grove - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#139: Mail Time - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "SRG#137: Vigil: The Longest Night (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#138: Great God Grove (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#139: Mail Time (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[Deluxe Edition] DE#6: Laika: Aged Through Blood (Switch)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "[Deluxe Edition] DE#2: Laika: Aged Through Blood (PS5)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "TC#134: Laika: Aged Through Blood - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#135: The Pedestrian - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#136: Aka - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "SRG#134: Laika: Aged Through Blood (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#135: The Pedestrian (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#136: Aka (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "UNSEALED [Deluxe Edition] DE#4: Cyber Shadow (Switch)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "[Deluxe Edition] DE#4: Cyber Shadow (Switch)",
+"type": "Deluxe Edition",
+"tags": []
+},
+{
+"title": "SRG#128: Cyber Shadow (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#129: #BLUD (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#130: A Highland Song (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "TC#125: SteamWorld Build - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#126: Nuclear Throne - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#127: The Last Hero of Nostalgaia - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#113: Cassette Beasts - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#114: Cavern of Dreams - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#115: Streets of Rogue - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "PS5 #6: Sable (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5 #7: OTXO (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "PS5 #8: GRIME Definitive Edition (PS5)",
+"type": "PlayStation",
+"tags": []
+},
+{
+"title": "OTXO (Deluxe Double Vinyl)",
+"type": "Merch",
+"tags": []
+},
+{
+"title": "TC#110: Nightmare Reaper - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#111: Crowns and Pawns - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#112: Wargroove 1 + 2 - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "SRG#110: Nightmare Reaper (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#111: Crowns and Pawns (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#112: Wargroove 1 + 2 (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "TC#104: Ship of Fools - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#105: Fran Bow - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "SRG#85: Hell Pie (Switch) (PATCH REQUIRED)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#85: Hell Pie (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#86: Islets (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#87: Atomik: RunGunJumpGun (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[Steelbook Case] SRG#79: Grapple Dog (Switch)",
+"type": "",
+"tags": []
+},
+{
+"title": "[Steelbook] SRG#79: Grapple Dog (Switch)",
+"type": "Steelbook",
+"tags": []
+},
+{
+"title": "[Collector's Edition] CE#10: Grapple Dog (Switch)",
+"type": "Collector's Edition",
+"tags": []
+},
+{
+"title": "SRG#79: Grapple Dog (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#80: Will You Snail? (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#81: Transiruby (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[Steelbook] SRG#65: Sally Face (Switch)",
+"type": "Steelbook",
+"tags": []
+},
+{
+"title": "[Collector's Edition] CE#7: Sally Face (Switch)",
+"type": "Collector's Edition",
+"tags": []
+},
+{
+"title": "SRG#65: Sally Face (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#66: Flynn: Son of Crimson (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#62: Bloodroots (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#63: Horace (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#64: Book of Demons (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#60: Mundaun (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#61: Caveblazers (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "TC#146: Shovel Knight Dig - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#147: Dark Deity 1 & 2 - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "TC#148: Bad End Theater - Trading Card Booster Pack",
+"type": "Trading Cards",
+"tags": []
+},
+{
+"title": "SRG#146: Shovel Knight Dig (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#147: Dark Deity 1 & 2 (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#148: Bad End Theater (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "[CLUB] SRG#148: Bad End Theater (Switch)",
+"type": "Switch",
+"tags": []
+},
+{
+"title": "SRG#154: Toree & Friends Collection (Switch)",
+"type": "Switch",
+"tags": [
+"Toree"
+]
+},
+{
+"title": "Wax Heads: Switch Game & Vinyl (Bundle)",
+"type": "",
+"tags": []
+},
+{
+"title": "PS5 Bundle #8: Haste & KILL KNIGHT (PS5)",
+"type": "",
+"tags": []
+},
+{
+"title": "SW2 MTC#02: Haste, Little Rocket Lab - Trading Card Bundle",
+"type": "",
+"tags": []
+},
+{
+"title": "[Special Edition] SW2 PB#02: Haste (Switch 2) & Little Rocket Lab (Switch 2 Edition)",
+"type": "",
+"tags": []
+},
+{
+"title": "SW2 PB#02: Haste (Switch 2), Little Rocket Lab (Switch 2 Edition)",
+"type": "",
+"tags": []
+},
+{
+"title": "[Special Edition] SW2 PB#01: Minishoot' Adventures (Switch 2 Edition) & The Midnight Walk (Switch 2)",
+"type": "",
+"tags": []
+},
+{
+"title": "SW2 PB#01: Minishoot' Adventures (Switch 2 Edition) & The Midnight Walk (Switch 2)",
+"type": "",
+"tags": []
+},
+{
+"title": "MTC#49: The Golden Idol Saga, Escape from Ever After, Wax Heads - Trading Card Bundle",
+"type": "",
+"tags": []
+},
+{
+"title": "PB#49: The Golden Idol Saga, Escape from Ever After, Wax Heads (Switch)",
+"type": "",
+"tags": []
+},
+{
+"title": "[Niko] Niko's Treasure Bundle!",
+"type": "",
+"tags": []
+},
+{
+"title": "SRG Mixtape Bundle Vol. 3 + 4 + Horror!",
+"type": "",
+"tags": []
+},
+{
+"title": "GB#74: A Short Hike Guidebook Bundle",
+"type": "",
+"tags": []
+}
+]

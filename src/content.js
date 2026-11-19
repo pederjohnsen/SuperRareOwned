@@ -409,5 +409,11 @@
     owned = await S.load();
     await seedCollection();
     rerender();
+    // the store's product list tells which releases each bundle contains
+    const C = globalThis.SRGOCatalog;
+    await C.load(async (url) => (await pageFetch(url, { credentials: "same-origin" })).json(), location.origin);
+    const migrated = C.migrateBundles(owned);
+    if (migrated) await S.save(migrated); // the change listener rerenders
+    else rerender();
   })();
 })();

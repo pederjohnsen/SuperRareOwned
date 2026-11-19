@@ -18,7 +18,8 @@
   // Case-sensitive on purpose, so "Volume #3" isn't read as a series.
   // An optional leading code joins the series: "SW2 TC#04" (Switch 2 trading
   // cards) is SW2TC#4, not the same as "TC#04".
-  const NUMBERED = /(?<![A-Za-z0-9])(?:([A-Z][A-Z0-9]{1,4})\s+)?([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
+  // A code is in capitals, or short with a digit in any case ("Sw2#02" appears too).
+  const NUMBERED = /(?<![A-Za-z0-9])(?:([A-Z][A-Z0-9]{1,4}|[A-Za-z]{1,3}\d{1,2})\s+)?([A-Z][A-Z0-9]{1,4}|[A-Za-z]{1,3}\d{1,2})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
   const NUMBERED_ALL = new RegExp(NUMBERED.source, "g");
   const KNOWN_PLATFORM = /^(switch2?|ps[345]|psvita|vita|xbox[a-z0-9]*|pc|3ds|wiiu)$/;
 
@@ -62,19 +63,24 @@
   // several share the same title, and none can be owned.
   const COMING_SOON = /coming\s*soon/i;
 
-  function parse(title) {
+  function parseSingle(title) {
     let t = cleanTitle(title);
     const comingSoon = COMING_SOON.test(t);
     const kind = kindOf(t);
     const prefix = kind ? kind + ":" : "";
     let platform = "";
-    const pm = t.match(TRAILING_PARENS);
-    if (pm) {
+    // the platform is in the last brackets, after any notes like "(PATCH REQUIRED)"
+    for (let i = 0; i < 3; i++) {
+      const pm = t.match(TRAILING_PARENS);
+      if (!pm) break;
       const p = normPlatform(pm[1]);
       if (p) {
         platform = p;
         t = t.slice(0, pm.index).trim();
+        break;
       }
+      if (!/patch|required|reprint|unsealed|backers/i.test(pm[1])) break;
+      t = t.slice(0, pm.index).trim();
     }
 
     // Every "<series>#<numbers>" in the title counts, so a bundle renamed after a
@@ -112,6 +118,36 @@
     return { title: cleanTitle(title), platform, numbered: false, units: [{ id: "name:" + prefix + name, platform }] };
   }
 
+  // Bundles: a resolver (bundles.js) turns a bundle's title into its contents'
+  // titles. The bundle then stands for its contents: its keys are theirs.
+  let bundleResolver = null;
+  function setBundleResolver(fn) {
+    bundleResolver = fn;
+  }
+
+  function parse(title) {
+    const single = parseSingle(title);
+    const parts = bundleResolver ? bundleResolver(title) : null;
+    if (!parts || !parts.length) return single;
+    const units = [];
+    const seen = new Set();
+    const comps = parts.map(parseSingle);
+    for (const c of comps)
+      for (const u of c.units) {
+        const k = unitKey(u);
+        if (!seen.has(k)) seen.add(k), units.push({ ...u, from: c.title });
+      }
+    if (!units.length) return single;
+    return {
+      ...single,
+      units,
+      bundle: comps.map((c) => c.title),
+      numbered: comps.some((c) => c.numbered),
+      series: [...new Set(comps.flatMap((c) => c.series || []))],
+      gameInside: comps.some((c) => isGame(c)),
+    };
+  }
+
   // Numbered series that aren't games: TC# is a release's trading card booster
   // pack ("TC#164: KILL KNIGHT - Trading Card Booster Pack").
   // (and "SW2 TC#04" for Switch 2), so any series ending in TC.
@@ -119,6 +155,7 @@
 
   // A game release, as opposed to merch or other extras with or without a number.
   function isGame(parsed) {
+    if (parsed.bundle) return !!parsed.gameInside; // a bundle with a game in it
     return !!parsed.numbered && !parsed.series.every((x) => NOT_GAME_SERIES.test(x));
   }
 
@@ -153,7 +190,7 @@
     const parsed = parse(title);
     for (const u of parsed.units) {
       if (isOwned) {
-        if (!ownedKeysFor(u, next).length) next[unitKey(u)] = { t: parsed.title, at: Date.now() };
+        if (!ownedKeysFor(u, next).length) next[unitKey(u)] = { t: u.from || parsed.title, at: Date.now() };
       } else {
         for (const k of ownedKeysFor(u, next)) delete next[k];
       }
@@ -161,7 +198,7 @@
     return next;
   }
 
-  const api = { parse, cleanTitle, upcaseCodes, unitKey, ownedKeysFor, status, withOwned, isGame };
+  const api = { parse, parseSingle, setBundleResolver, cleanTitle, upcaseCodes, unitKey, ownedKeysFor, status, withOwned, isGame };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.SRGOKeys = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

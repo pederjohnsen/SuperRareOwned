@@ -21,11 +21,15 @@ After installing or reloading a new version, reload any superraregames.com tabs 
 - To mark a single release as owned (or remove it), hover its card on a store listing page and click **I own this** at the bottom of the cover, or use the button under the title on its product page or in its quick view. That's the only place the button appears: not in the cart, recommendations or elsewhere, and not on bundles or "Coming Soon!" listings. Badges still show everywhere.
 - Or click the toolbar icon → **Manage owned games** and paste titles or numbers (`SRG#149`, `PS5#17`, `DE#2 (Switch)`), one per line.
 - Owned games are greyed out with a green **✓ Owned** badge on the bottom-left of the cover (the store keeps its own badges in the top corners). Bundles you partly own show "1 of 2 owned". Small thumbnails get just a ✓.
+- **Bundles count as what's in them.** Owning "Wax Heads: Switch Game & Vinyl (Bundle)" means owning the Switch game and the vinyl, and owning those separately means owning the bundle (owning just the game shows the bundle as "1 of 2 owned"). The same goes for PB#, PS5 Bundle, SW2 PB#, Deluxe/Steelbook/Collector's/Special Edition bundles and MTC# trading card bundles. Bundles aren't marked by hand; mark the releases in them, or import your orders.
 - Product pages and quick views of games you own show **You already own this.** above Add to cart.
 - If your cart holds something you own, a red panel lists it on every page of the store (cart and checkout included). Dismiss hides it until the cart changes.
 - The list syncs through your browser account (Chrome or Firefox sync). Export/Import on the manage page for backups or moving between browsers.
 
 ## How matching works
+
+**Bundles.** A bundle names its contents after the colon ("PS5 Bundle #8: Haste & KILL KNIGHT (PS5)"). The extension looks those names up in the store's public product list (`/products.json`, cached for 12 hours) and treats the bundle as the releases it found: the games on the bundle's platform and in its edition, each game's TC pack for an MTC# bundle, or the game plus extras for a "Game & Vinyl" bundle. "Game #154" (not revealed yet) is release #154 on that platform. Names it can't find are kept by name. Bundles that don't name their contents ("Niko's Treasure Bundle!") stay single items. Bundles saved under their own number before this are converted the next time the store or manage page opens.
+
 
 Titles become keys: `[CLUB]`, ` - ` and `[REPRINT]` are removed, then the series and number (SRG#, PS4#, PS5#, DE#, CE#, …) plus the platform in brackets at the end. `[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)` and `SRG#149: Grapple Dogs Cosmic Canines (Switch)` are both `SRG#149|switch`. DE#2 (Switch) and DE#2 (PS5) are different games. A missing platform matches any platform. Titles without a number (Mixtapes) match on the cleaned-up name. Other bracketed tags such as `[Steelbook]` make a separate item: `[Steelbook] SRG#88` is the case, not the game SRG#88. URLs aren't used for matching, because club handles are inconsistent (`copy-of-…`, `…-switch-1`).
 

@@ -28,6 +28,7 @@ SRG Owned marks the games you already own wherever they appear on superraregames
 • A warning lists anything in your cart that you already own.
 • Import your owned games from your Super Rare Games order history in one click. You review the list before anything is saved, cancelled orders are skipped, and merch is left unticked.
 • Mark single releases yourself with "I own this" on store pages, product pages and quick view.
+• Bundles count as what's in them: own a bundle and its games (and vinyl or cards) show as owned; own those separately and the bundle shows as owned.
 • Matches by release number and platform (SRG#, PS4#, PS5#, Deluxe and Collector's Editions), so the Switch and PS5 versions of a game are kept apart, and steelbooks aren't confused with the game.
 • Your list syncs through your browser account. Export and import it as a file for backups.
 
