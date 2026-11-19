@@ -18,6 +18,8 @@ PRODUCTS = {
     "club-deluxe-edition-de-6-laika-aged-through-blood-switch-1": "[CLUB] - [Deluxe Edition] DE#2: Laika: Aged Through Blood (PS5)",
     "copy-of-ps4-4-the-tartarus-key-ps4": "[CLUB] - PS4 #4: The Tartarus Key (PS4)",
     "srg-149-grapple-dogs-cosmic-canines-switch": "SRG#149: Grapple Dogs Cosmic Canines (Switch)",
+    "club-coming-soon": "[CLUB] Coming Soon!",
+    "club-srg-149-coming-soon": "[CLUB] SRG#149: Coming Soon!",
     "deluxe-edition-de-2-cassette-beasts-switch": "[Deluxe Edition] DE#2: Cassette Beasts (Switch)",
 }
 COLLECTION = [h for h in PRODUCTS if h.startswith(("club-", "copy-of"))]
@@ -86,7 +88,7 @@ with sync_playwright() as p:
     pg.goto(BASE + "/collections/club-26-products")
     grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
 
-    check("toggle appears on each card", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION)))
+    check("toggle on each card except the unnumbered Coming Soon!", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 1))
     check("nav link isn't decorated", lambda: expect(pg.locator("header .srgo-toggle")).to_have_count(0))
 
     def mark_club_grapple():
@@ -96,6 +98,13 @@ with sync_playwright() as p:
         expect(grapple).to_have_attribute("data-srgo-state", "owned")
         expect(pg).to_have_url(BASE + "/collections/club-26-products")  # click didn't navigate
     check("marking a club card owned", mark_club_grapple)
+    def coming_soon():
+        plain = pg.locator("li.grid__item", has_text="[CLUB] Coming Soon!")
+        expect(plain).to_have_attribute("data-srgo-state", "none")
+        expect(plain.locator(".srgo-badge, .srgo-toggle")).to_have_count(0)
+        numbered = pg.locator("li.grid__item", has_text="SRG#149: Coming Soon!")
+        expect(numbered.locator(".srgo-badge")).to_have_text("✓ Owned")  # owned through SRG#149
+    check("Coming Soon!: unnumbered never owned, numbered follows its number", coming_soon)
     pg.screenshot(path=os.path.join(OUT, "collection.png"))
 
     def public_page_owned():

@@ -16,7 +16,7 @@
   const TRAILING_PARENS = /\(([^()]+)\)\s*$/;
   // Series codes are written in capitals: SRG#149, DE#2, CE#12, PS5 #17, PS4#5.
   // Case-sensitive on purpose, so "Volume #3" isn't read as a series.
-  const NUMBERED = /(?<![A-Za-z0-9])([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[\/&+,]\s*\d+)*)/;
+  const NUMBERED = /(?<![A-Za-z0-9])([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
   const KNOWN_PLATFORM = /^(switch2?|ps[345]|psvita|vita|xbox[a-z0-9]*|pc|3ds|wiiu)$/;
 
   function normPlatform(text) {
@@ -53,8 +53,15 @@
     return tags.map((b) => b.toUpperCase().replace(/[^A-Z0-9]+/g, "")).join("+");
   }
 
+  // "Coming Soon!" placeholder listings can't be bought on their own. One with a
+  // release number still matches by that number, so a game you already have
+  // through a bundle shows as owned. One without a number gets no keys at all:
+  // several share the same title, and none can be owned.
+  const COMING_SOON = /coming\s*soon/i;
+
   function parse(title) {
     let t = cleanTitle(title);
+    const comingSoon = COMING_SOON.test(t);
     const kind = kindOf(t);
     const prefix = kind ? kind + ":" : "";
     let platform = "";
@@ -70,15 +77,22 @@
     const nm = t.match(NUMBERED);
     if (nm) {
       const series = nm[1].toUpperCase();
-      const numbers = nm[2].split(/\s*[\/&+,]\s*/).map((n) => String(parseInt(n, 10)));
+      const numbers = [];
+      for (const part of nm[2].split(/\s*[\/&+,]\s*/)) {
+        const r = part.match(/^(\d+)\s*[-–]\s*(\d+)$/); // bundle ranges: SRG#158-160
+        const a = parseInt(r ? r[1] : part, 10), b = r ? parseInt(r[2], 10) : a;
+        for (let n = a; n <= b && n - a < 30; n++) numbers.push(String(n));
+      }
       return {
         title: cleanTitle(title),
         platform,
+        comingSoon,
         numbered: true,
         units: numbers.map((n) => ({ id: prefix + series + "#" + n, platform })),
       };
     }
 
+    if (comingSoon) return { title: cleanTitle(title), platform, comingSoon, numbered: false, units: [] };
     const name = t.replace(BRACKETED, " ").toLowerCase().replace(/[^a-z0-9]/g, "");
     if (!name) return { title: cleanTitle(title), platform, numbered: false, units: [] };
     return { title: cleanTitle(title), platform, numbered: false, units: [{ id: "name:" + prefix + name, platform }] };

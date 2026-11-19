@@ -72,3 +72,25 @@ test("marking twice doesn't duplicate", () => {
   owned = K.withOwned("[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)", owned, true);
   assert.equal(Object.keys(owned).length, 1);
 });
+
+test("Coming Soon! placeholders", () => {
+  // no number: nothing to own, and they don't all match each other
+  for (const t of ["Coming Soon!", "[CLUB] Coming Soon! (Switch)", "COMING SOON"]) {
+    assert.equal(K.parse(t).units.length, 0, t);
+    assert.equal(K.parse(t).comingSoon, true, t);
+  }
+  assert.deepEqual(K.withOwned("Coming Soon!", {}, true), {});
+  // with a number: matches that number, e.g. a game you have through a bundle
+  assert.deepEqual(ids("SRG#160: Coming Soon! (Switch)"), ["SRG#160|switch"]);
+  const owned = K.withOwned("[CLUB] SRG#158-160: Spring Bundle (Switch)", {}, true);
+  assert.equal(K.status("SRG#160: Coming Soon! (Switch)", owned).owned, 1);
+  assert.equal(K.status("SRG#161: Coming Soon! (Switch)", owned).owned, 0);
+});
+
+test("bundle number ranges", () => {
+  assert.deepEqual(ids("SRG#158-160: Spring Bundle (Switch)"), ["SRG#158|switch", "SRG#159|switch", "SRG#160|switch"]);
+  assert.deepEqual(ids("SRG# 107/108: Double Pack"), ["SRG#107|", "SRG#108|"]);
+  assert.deepEqual(ids("SRG#100-102 & 105 (Switch)"), ["SRG#100|switch", "SRG#101|switch", "SRG#102|switch", "SRG#105|switch"]);
+  // a dash before words is a subtitle, not a range
+  assert.deepEqual(ids("SRG#149 - Grapple Dogs (Switch)"), ["SRG#149|switch"]);
+});

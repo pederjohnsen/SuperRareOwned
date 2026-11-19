@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Super Rare Games - Account</title></head>
+<body><div id="app"><main id="main-content"></main></div>
+<script>
+// A tiny stand-in for the account site's single-page app: same markup as the
+// real pages, client-side routing on popstate, "Show more orders" paging.
+const ORDERS = [{"number": "1004", "id": "9004", "status": "Confirmed", "total": "\u00a312.00", "variants": ["998"], "items": []}, {"number": "1003", "id": "9003", "status": "Confirmed", "total": "\u00a349.84", "variants": ["111", "112", "117"], "items": [["[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)", "club-srg-149-grapple-dogs-cosmic-canines-switch", "111"], ["[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)", "club-steelbook-srg-88-lost-in-play-switch", "112"], ["[CLUB] SRG x Moonstone Island T-Shirt", "club-srg-x-moonstone-island-t-shirt", "117"]]}, {"number": "1002", "id": "9002", "status": "Delivered 23 Oct", "total": "\u00a337.20", "variants": ["113", "114"], "items": [["[CLUB] SRG#148: Bad End Theater (Switch)", "club-srg-148-bad-end-theater-switch", "113"], ["SRG Mixtape Volume #3", "srg-mixtape-volume-3", "114"]]}, {"number": "1001", "id": "9001", "status": "Canceled", "total": "\u00a337.20", "variants": ["115"], "items": [["SRG#150: Tiny Terry's Turbo Trip (Switch)", "srg-150-tiny-terrys-turbo-trip-switch", "115"]]}, {"number": "1000", "id": "9000", "status": "Complete", "total": "\u00a355.00", "variants": ["116", "999"], "items": [["PS5 #21: Shovel Knight Dig (PS5)", "ps5-21-shovel-knight-dig-ps5", "116"], ["[CLUB] PS5 #30: Gone Game (PS5)", "club-ps5-30-gone-game-ps5", "999"]]}];
+const FIRST = 4;
+let shown = FIRST;
+const esc = (t) => t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+function card(o) {
+  const cart = o.variants.map((v) => v + ":1").join(",");
+  return `<div class="order-card"><a aria-label="View order #${o.number}, ${o.status}, ${o.total} GBP" href="/orders/${o.id}?region_country=GB">#${o.number}</a>
+    <a aria-label="Buy again for order #${o.number}" href="https://superraregames.com/cart/${cart}?storefront=true">Buy again</a></div>`;
+}
+function item(i) {
+  return `<div role="row"><div role="cell"><a aria-label="${esc(i[0])}" href="https://superraregames.com/products/${i[1]}?variant=${i[2]}&amp;sso=silent" target="_blank"><img alt="" src="data:,"></a></div><div role="cell"><span>${esc(i[0])}</span></div></div>`;
+}
+function orderHtml(o) {
+  return `<div><a aria-label="Orders" href="/orders">Orders</a><h1 tabindex="-1">Order #${o.number}</h1><div></div><span>${o.status}</span></div>
+    <section aria-label="Order summary"><h2>Order summary</h2><div role="table">${o.items.map(item).join("")}</div></section>`;
+}
+function render() {
+  const main = document.getElementById("main-content");
+  const m = location.pathname.match(/^\/orders\/(\d+)$/);
+  if (m) {
+    const o = ORDERS.find((x) => x.id === m[1]);
+    main.innerHTML = "<p>Loading…</p>";
+    setTimeout(() => { if (location.pathname.endsWith(m[1])) main.innerHTML = o ? orderHtml(o) : "<h1>Not found</h1>"; }, 250);
+    return;
+  }
+  main.innerHTML = `<h1>Orders</h1><div id="list">${ORDERS.slice(0, shown).map(card).join("")}</div>` +
+    (shown < ORDERS.length ? `<button aria-busy="false" aria-label="Show more orders" type="button"><span>Show more</span></button>` : "");
+  const b = main.querySelector("[aria-label='Show more orders']");
+  if (b) b.addEventListener("click", () => { b.setAttribute("aria-busy", "true"); setTimeout(() => { shown = ORDERS.length; render(); }, 400); });
+}
+addEventListener("popstate", render);
+render();
+</script></body></html>

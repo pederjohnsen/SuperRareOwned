@@ -99,7 +99,9 @@
     const variantOrders = new Map(); // variantId -> [orders]
     for (const o of kept) {
       for (const it of o.items || []) add(it.title, o.number);
-      for (const id of o.variantIds || []) {
+      // titles read from the order page beat a lookup (and cover [CLUB] items
+      // that are no longer on the store), so only look up orders without them
+      for (const id of (o.items || []).length ? [] : o.variantIds || []) {
         if (!variantOrders.has(id)) variantOrders.set(id, []);
         variantOrders.get(id).push(o);
       }
@@ -146,7 +148,7 @@
     if (unknown.length)
       note(
         notes,
-        `Some items couldn't be identified (probably no longer on the store). Open these orders and click “Add this order's games” there: `,
+        `Couldn't read the items in these orders. Open each one and click “Add this order's games” there: `,
         ...unknown.flatMap((o, i) => [i ? ", " : "", orderLink(o)])
       );
 
