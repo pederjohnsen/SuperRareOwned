@@ -22,6 +22,8 @@ ORDER = os.environ.get("REAL_ORDER")
 SERVER = os.environ.get("SERVER", "1") == "1"
 import json, html as htmllib
 APP = open(os.path.join(HERE, "fixtures", "app.html"), encoding="utf-8").read()
+# an element named "browser" shows up as window.browser, even to the extension
+APP = APP.replace('<div id="app">', '<div id="browser" hidden></div><div id="app">')
 FIX = json.load(open(os.path.join(HERE, "fixtures", "orders.json")))
 
 def server_rendered(order_id):
@@ -226,6 +228,24 @@ with sync_playwright() as p:
             expect(r2.locator(".pick").nth(0).locator("label", has_text="Steelbook")).to_have_count(1)
             r2.screenshot(path=os.path.join(OUT, "import-review-real-order.png"), full_page=True)
         check("real saved order page", real_order)
+
+    if not REAL:
+        def stale_tab():
+            # what happens when you reload the extension with an orders tab open
+            pg.goto("https://account.superraregames.com/orders")
+            expect(pg.locator(".srgo-account button.srgo-primary")).to_have_text("Import from all orders")
+            tmp = ctx.new_page()
+            tmp.goto(f"chrome-extension://{eid}/popup.html")
+            try:
+                tmp.evaluate("chrome.runtime.reload()")
+            except Exception:
+                pass  # the page closes as the extension reloads
+            pg.wait_for_timeout(2500)
+            pg.locator(".srgo-account button.srgo-primary").click()
+            expect(pg.locator(".srgo-account-msg")).to_have_text("SRG Owned was updated or reloaded. Reload this page and try again.")
+            # (an extension that reloads itself doesn't come back under automation,
+            # so "reload the page and it works" can't be checked here)
+        check("tab left open across an extension reload says to reload the page", stale_tab)
 
     def storefront_script_not_on_account():
         expect(pg.locator(".srgo-cart, .srgo-toggle")).to_have_count(0)

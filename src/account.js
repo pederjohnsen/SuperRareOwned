@@ -8,7 +8,13 @@
 // - One order (/orders/<id>): item links carry the full product title.
 
 (function () {
-  const ext = globalThis.browser || globalThis.chrome;
+  const ext = (function (g) {
+    // A real extension API has runtime.id. Checking for it skips a page element
+    // that happens to be named "browser", and it's missing in a tab whose copy of
+    // the extension was cut off by an update or reload.
+    const ok = (o) => o && o.runtime && o.runtime.id && o.storage;
+    return ok(g.browser) ? g.browser : ok(g.chrome) ? g.chrome : null;
+  })(globalThis);
   const SKIP_STATUS = /cancel|refund/i; // "Canceled", "Cancelled", "Refunded"
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -157,7 +163,17 @@
     return { read: orders.filter((o) => o.items && o.items.length).length, stopped: stopRequested };
   }
 
+  const STALE = "SRG Owned was updated or reloaded. Reload this page and try again.";
+  function alive() {
+    try {
+      return !!(ext && ext.runtime && ext.runtime.id);
+    } catch {
+      return false;
+    }
+  }
+
   async function handOver(payload) {
+    if (!alive()) throw new Error(STALE);
     await ext.storage.local.set({ srgoImport: { at: Date.now(), ...payload } });
   }
 
@@ -165,7 +181,7 @@
   // tabs opened long after the click, and loading every order takes a while.
   function reviewLink() {
     const a = el("a", "srgo-primary srgo-link", "Open the review");
-    a.href = ext.runtime.getURL("options.html");
+    a.href = alive() ? ext.runtime.getURL("options.html") : "#";
     a.target = "_blank";
     a.rel = "noopener";
     return a;
@@ -200,6 +216,11 @@
     document.body.appendChild(panel);
 
     go.addEventListener("click", async () => {
+      // check before spending minutes reading orders that couldn't be handed over
+      if (!alive()) {
+        msg.textContent = STALE;
+        return;
+      }
       go.disabled = true;
       try {
         if (mode === "list") {
@@ -242,7 +263,7 @@
         go.replaceWith(reviewLink());
         return;
       } catch (e) {
-        msg.textContent = "Something went wrong: " + e.message;
+        msg.textContent = e.message === STALE ? STALE : "Something went wrong: " + e.message;
       } finally {
         busy = false;
         last = location.pathname.replace(/\/$/, "");

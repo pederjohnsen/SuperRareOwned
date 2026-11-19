@@ -3,7 +3,13 @@
 // (/products.json), then /variants/<id> for anything not found there.
 
 (function () {
-  const ext = globalThis.browser || globalThis.chrome;
+  const ext = (function (g) {
+    // A real extension API has runtime.id. Checking for it skips a page element
+    // that happens to be named "browser", and it's missing in a tab whose copy of
+    // the extension was cut off by an update or reload.
+    const ok = (o) => o && o.runtime && o.runtime.id && o.storage;
+    return ok(g.browser) ? g.browser : ok(g.chrome) ? g.chrome : null;
+  })(globalThis);
   const K = globalThis.SRGOKeys;
   const S = globalThis.SRGOStore;
   const STORE = "https://superraregames.com";

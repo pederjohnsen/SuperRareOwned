@@ -121,7 +121,10 @@
       (e) => {
         e.preventDefault();
         e.stopPropagation();
-        S.setOwned(title, !isOwned);
+        S.setOwned(title, !isOwned).catch((err) => {
+          b.textContent = "Reload the page";
+          b.title = err.message;
+        });
       },
       true
     );
@@ -338,6 +341,7 @@
   });
 
   (async () => {
+    if (!S.alive()) return;
     owned = await S.load();
     await seedCollection();
     rerender();

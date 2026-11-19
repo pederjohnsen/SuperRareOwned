@@ -3,11 +3,31 @@
 // list is split across items owned_0, owned_1, ... with owned_n holding the count.
 
 (function (root) {
-  const ext = root.browser || root.chrome;
+  const ext = (function (g) {
+    // A real extension API has runtime.id. Checking for it skips a page element
+    // that happens to be named "browser", and it's missing in a tab whose copy of
+    // the extension was cut off by an update or reload.
+    const ok = (o) => o && o.runtime && o.runtime.id && o.storage;
+    return ok(g.browser) ? g.browser : ok(g.chrome) ? g.chrome : null;
+  })(root);
   const CHUNK_BYTES = 7000;
   const enc = new TextEncoder();
 
+  // In a tab left open while the extension was updated or reloaded, the
+  // extension's storage is gone until the page is reloaded.
+  function alive() {
+    try {
+      return !!(ext && ext.runtime && ext.runtime.id);
+    } catch {
+      return false;
+    }
+  }
+  function requireAlive() {
+    if (!alive()) throw new Error("SRG Owned was updated or reloaded. Reload this page and try again.");
+  }
+
   async function load() {
+    requireAlive();
     const all = await ext.storage.sync.get(null);
     const n = all.owned_n || 0;
     const owned = {};
@@ -16,6 +36,7 @@
   }
 
   async function save(owned) {
+    requireAlive();
     const chunks = [];
     let cur = {};
     let size = 2;
@@ -46,10 +67,11 @@
   }
 
   function onChange(fn) {
+    if (!alive()) return;
     ext.storage.onChanged.addListener((changes, area) => {
       if (area === "sync" && Object.keys(changes).some((k) => k.startsWith("owned_"))) fn();
     });
   }
 
-  root.SRGOStore = { load, save, setOwned, onChange };
+  root.SRGOStore = { load, save, setOwned, onChange, alive };
 })(globalThis);
