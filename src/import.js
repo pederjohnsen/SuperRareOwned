@@ -150,6 +150,13 @@
     const notes = $("import-notes");
     if (!data.complete) note(notes, "Not every order loaded on the orders page, so some may be missing. Run the import again from the orders page to pick them up.");
     if (skipped.length) note(notes, `Skipped ${skipped.length} cancelled or refunded order${skipped.length === 1 ? "" : "s"}: `, ...skipped.flatMap((o, i) => [i ? ", " : "", orderLink(o)]));
+    const partial = kept.filter((o) => o.partial);
+    if (partial.length)
+      note(
+        notes,
+        `These orders didn't finish loading, so some of their items may be missing. Open each one and click “Add this order's games” there: `,
+        ...partial.flatMap((o, i) => [i ? ", " : "", orderLink(o)])
+      );
     const unknown = [...new Map([...missing, ...noItems].map((o) => [o.number, o])).values()];
     if (unknown.length)
       note(

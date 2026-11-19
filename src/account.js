@@ -77,6 +77,34 @@
     return [...items.values()];
   }
 
+  // How complete is the order on screen? Each item row shows a quantity badge
+  // ("Quantity 2"), and the totals say "Subtotal · 11 items" (the sum of
+  // quantities). The app can show an order with only some of its items first,
+  // so an order is only read once the rows add up to the subtotal.
+  function itemRows(root) {
+    return [...root.querySelectorAll("main [role='table'] [role='row']")].filter(
+      (row) => !row.querySelector("[role='rowheader'], [role='columnheader']") && row.querySelector("[role='cell']")
+    );
+  }
+
+  function rowQuantity(row) {
+    const label = [...row.querySelectorAll("span")].find((x) => x.textContent.trim() === "Quantity");
+    const n = label && parseInt(label.parentElement.textContent.replace("Quantity", ""), 10);
+    return n > 0 ? n : 1;
+  }
+
+  function orderState(root) {
+    const items = readItems(root);
+    const rows = itemRows(root);
+    const qty = rows.length ? rows.reduce((a, r) => a + rowQuantity(r), 0) : items.length;
+    let expected = null;
+    for (const h of root.querySelectorAll("main [role='rowheader']")) {
+      const m = h.textContent.match(/Subtotal\s*·\s*(\d+)\s*items?/i);
+      if (m) expected = parseInt(m[1], 10);
+    }
+    return { items, qty, expected, complete: expected === null ? null : qty >= expected };
+  }
+
   function orderHeading(root) {
     const h1 = [...root.querySelectorAll("main h1")].map((h) => h.textContent.trim()).find((t) => /^Order #/.test(t));
     return h1 ? h1.replace(/^Order #/, "") : null;
@@ -98,8 +126,9 @@
       const r = await fetch(o.url, { credentials: "include" });
       if (!r.ok) return null;
       const doc = new DOMParser().parseFromString(await r.text(), "text/html");
-      const items = readItems(doc);
-      return items.length ? items : null;
+      const st = orderState(doc);
+      // incomplete (or no items): let the app show it instead
+      return st.items.length && st.complete !== false ? { items: st.items, partial: false } : null;
     } catch {
       return null;
     }
@@ -114,19 +143,30 @@
     window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
   }
 
-  async function itemsByNavigation(o, timeout = 8000) {
-    goTo(o.url);
-    let last = -1, steady = 0;
-    for (let t = 0; t < timeout; t += 200) {
-      await sleep(200);
-      if (orderHeading(document) !== o.number) continue;
-      const n = readItems(document).length;
-      if (n && n === last) {
-        if (++steady >= 2) return readItems(document);
-      } else steady = 0;
-      last = n;
+  // Wait until the order on screen is complete: the rows add up to the subtotal
+  // (seen twice in a row), or, if there's no subtotal, nothing has changed for
+  // a second. Gives up after `timeout`, returning what it has as partial.
+  async function waitForOrder(number, timeout = 15000) {
+    let last = null, steady = 0, best = null;
+    for (let t = 0; t < timeout; t += 250) {
+      await sleep(250);
+      if (number && orderHeading(document) !== number) continue;
+      const st = orderState(document);
+      if (st.expected === 0) return { items: [], partial: false };
+      if (!st.items.length) continue;
+      best = st;
+      const sig = st.items.length + ":" + st.qty;
+      steady = sig === last ? steady + 1 : 0;
+      last = sig;
+      if (st.complete === true && steady >= 1) return { items: st.items, partial: false };
+      if (st.complete === null && steady >= 4) return { items: st.items, partial: false };
     }
-    return null;
+    return best ? { items: best.items, partial: true } : null;
+  }
+
+  async function itemsByNavigation(o, timeout = 15000) {
+    goTo(o.url);
+    return waitForOrder(o.number, timeout);
   }
 
   // Click "Show more orders" until it's gone or stops loading more.
@@ -162,19 +202,22 @@
       if (stopRequested) break;
       const o = orders[i];
       onProgress(i + 1, orders.length);
-      let items = null;
+      let res = null;
       if (mode !== "nav" && mode !== "off") {
-        items = await itemsByFetch(o);
-        if (mode === null) mode = items ? "fetch" : "nav";
+        res = await itemsByFetch(o);
+        if (mode === null) mode = res ? "fetch" : "nav";
       }
-      if (!items && mode !== "off") {
-        items = await itemsByNavigation(o);
+      if (!res && mode !== "off") {
+        res = await itemsByNavigation(o);
         if (mode === "nav") {
-          navFails = items ? 0 : navFails + 1;
+          navFails = res && res.items.length ? 0 : navFails + 1;
           if (navFails >= 3) mode = "off"; // the app isn't responding to this; stop trying
         }
       }
-      if (items) o.items = items;
+      if (res && res.items.length) {
+        o.items = res.items;
+        if (res.partial) o.partial = true;
+      }
     }
     if (mode === "nav" || location.pathname.replace(/\/$/, "") !== "/orders") goTo("/orders");
     return { read: orders.filter((o) => o.items && o.items.length).length, stopped: stopRequested };
@@ -263,18 +306,19 @@
             ".";
           await handOver({ source: "orders", complete: res.complete, orders });
         } else {
-          let order = readOrderPage();
-          for (let t = 0; t < 25 && !order.items.length; t++) {
-            msg.textContent = "Waiting for the order to load…";
-            await sleep(200);
-            order = readOrderPage();
-          }
-          if (!order.items.length) {
+          msg.textContent = "Waiting for the order to finish loading…";
+          const res = await waitForOrder(orderHeading(document), 15000);
+          const order = readOrderPage();
+          if (!res || !res.items.length) {
             msg.textContent = "Couldn't find any items on this page. Wait for it to finish loading, then try again.";
             go.disabled = false;
             return;
           }
-          msg.textContent = `Found ${order.items.length} items.`;
+          order.items = res.items;
+          if (res.partial) order.partial = true;
+          msg.textContent = res.partial
+            ? `Found ${res.items.length} items, but the order hadn't finished loading. Some may be missing.`
+            : `Found ${res.items.length} items.`;
           await handOver({ source: "order", complete: true, orders: [order] });
         }
         go.replaceWith(reviewLink());

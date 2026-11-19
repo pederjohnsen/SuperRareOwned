@@ -30,13 +30,17 @@ def server_rendered(order_id):
     o = next((x for x in FIX if x["id"] == order_id), None)
     if not o:
         return APP
-    def row(t, h, v):
-        thumb = (f'<a aria-label="{htmllib.escape(t)}" href="https://superraregames.com/products/{h}?variant={v}&amp;sso=silent"><img alt="" src="data:,"></a>'
-                 if h else f'<div><img src="data:," alt="{htmllib.escape(t)}"></div>')  # off the store: no link
+    def row(t, h, v, q=1):
+        badge = f'<div><div><span>Quantity</span>{q}</div></div>'
+        thumb = (f'<a aria-label="{htmllib.escape(t)}" href="https://superraregames.com/products/{h}?variant={v}&amp;sso=silent"><div><img alt="" src="data:,">{badge}</div></a>'
+                 if h else f'<div><img src="data:," alt="{htmllib.escape(t)}">{badge}</div>')  # off the store: no link
         return f'<div role="row"><div aria-hidden="true"></div><div role="cell">{thumb}</div><div role="cell"><span>{htmllib.escape(t)}</span></div></div>'
-    items = "".join(row(t, h, v) for t, h, v in o["items"])
+    items = "".join(row(*i) for i in o["items"])
+    n = o.get("subtotal", sum((i[3] if len(i) > 3 else 1) for i in o["items"]))
+    totals = (f'<div role="table"><div role="rowgroup"><div role="row"><div role="rowheader"><span>Subtotal · {n} item{"" if n == 1 else "s"}</span></div>'
+              f'<div role="cell"><span>£0.00</span></div></div></div></div>')
     main = (f'<div><a aria-label="Orders" href="/orders">Orders</a><h1 tabindex="-1">Order #{o["number"]}</h1><div></div><span>{o["status"]}</span></div>'
-            f'<section aria-label="Order summary"><div role="table">{items}</div></section>')
+            f'<section aria-label="Order summary"><div role="table">{items}</div>{totals}</section>')
     return APP.replace('<main id="main-content"></main>', f'<main id="main-content">{main}</main>')
 
 def ext_id(path):
@@ -185,16 +189,18 @@ with sync_playwright() as p:
     if not REAL:
         def review_contents():
             expect(pg.locator("button[aria-label='Show more orders']")).to_have_count(0)  # clicked until gone
-            expect(review.locator("#import-status")).to_have_text("From 4 orders: 4 games to add, 3 other items, 1 already owned.")
+            expect(review.locator("#import-status")).to_have_text("From 5 orders: 5 games to add, 3 other items, 1 already owned.")
             games = review.locator(".pick").nth(0).locator("label")
             # every [CLUB] item identified from its order page, though the store no longer has it
             expect(games).to_have_text([
                 "[Steelbook] SRG#88: Lost in Play (Switch)Order #1003",
                 "PS5 #21: Shovel Knight Dig (PS5)Order #1000",
                 "PS5 #30: Gone Game (PS5)Order #1000",
+                "PS5 #40: Slow Game (PS5)Order #1005",  # kept, though its order never finished loading
                 "SRG#149: Grapple Dogs Cosmic Canines (Switch)Order #1003",
             ])
-            expect(games.locator("input:checked")).to_have_count(4)
+            expect(games.locator("input:checked")).to_have_count(5)
+            expect(review.locator(".note", has_text="didn't finish loading")).to_have_text(re.compile(r"#1005$"))
             other = review.locator(".pick").nth(1).locator("label")
             expect(other).to_have_text(["SRG Mixtape Volume #3Order #1002", "SRG x Moonstone Island T-ShirtOrder #1003",
                                         "TC#164: KILL KNIGHT - Trading Card Booster PackOrder #1002"])
@@ -202,22 +208,22 @@ with sync_playwright() as p:
             expect(review.locator(".note", has_text="cancelled")).to_contain_text("#1001")
             expect(review.locator(".note", has_text="Couldn't read")).to_have_text(re.compile(r"#1004$"))
             expect(review.locator("text=Tiny Terry")).to_have_count(0)  # from the cancelled order
-            expect(review.locator("#import-save")).to_have_text("Add 4 selected")
+            expect(review.locator("#import-save")).to_have_text("Add 5 selected")
             # only the order whose page had no items needed a store lookup
             assert calls["variants"] == 1, calls
-            expect(pg.locator(".srgo-account-msg")).to_have_text("Read 3 of 4 orders; 1 cancelled or refunded skipped.")
+            expect(pg.locator(".srgo-account-msg")).to_have_text("Read 4 of 5 orders; 1 cancelled or refunded skipped.")
             expect(pg).to_have_url(re.compile(r"/orders$"))  # back on the list afterwards
         check("review lists games, other items, skipped and unknown", review_contents)
         review.screenshot(path=os.path.join(OUT, "import-review.png"), full_page=True)
 
         def save():
             review.locator(".pick").nth(0).locator("label", has_text="Shovel Knight").click()  # untick a gift
-            expect(review.locator("#import-save")).to_have_text("Add 3 selected")
+            expect(review.locator("#import-save")).to_have_text("Add 4 selected")
             review.click("#import-save")
-            expect(review.locator("#import-done")).to_have_text("Added 3 to your owned games.")
+            expect(review.locator("#import-done")).to_have_text("Added 4 to your owned games.")
             expect(review.locator("#import[hidden]")).to_have_count(1)  # the import section closes
             expect(review.locator("#import-done[hidden]")).to_have_count(1, timeout=10000)  # and the note fades
-            expect(review.locator("#list li")).to_have_count(4)
+            expect(review.locator("#list li")).to_have_count(5)
             expect(review.locator("#list li", has_text="Steelbook")).to_contain_text("STEELBOOK:SRG#88")
             expect(review.locator("#list li", has_text="Shovel")).to_have_count(0)
         check("saving adds only the ticked games", save)
