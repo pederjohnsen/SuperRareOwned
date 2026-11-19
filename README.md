@@ -52,5 +52,6 @@ REAL_ORDERS=orders.html REAL_ORDER=order.html python3 test/import_test.py   # yo
 ## Releasing and store listings
 
 - Every push runs the tests and the Firefox add-on lint on GitHub Actions (`.github/workflows/ci.yml`).
-- To release: bump `version` in `src/manifest.json`, commit, then `git tag v1.0.0 && git push --tags`. The workflow checks the tag matches the manifest, builds `srg-owned-1.0.0.zip` and attaches it to a GitHub release. Upload that zip to the stores.
+- To release: bump `version` in `src/manifest.json`, commit, then tag that commit with the version (`1.0.6`, `v1.0.6` or `v.1.0.6`) and push the tag: `git tag 1.0.6 && git push origin 1.0.6`. The workflow checks the tag matches the manifest, builds `srg-owned-1.0.6.zip` and attaches it to a GitHub release. Upload that zip to the stores.
+- To release a tag that already exists (e.g. one pushed before the workflow could release it): Actions → CI → Run workflow, and enter the tag. It builds that version's code with the current workflow.
 - Store texts, permission justifications, data disclosures, screenshots and the promo tile: [`docs/store/`](docs/store/listing.md). Regenerate the screenshots with `python3 tools/screenshots.py`.

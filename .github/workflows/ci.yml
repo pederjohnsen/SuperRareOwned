@@ -3,9 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ["v*", "[0-9]*"]  # 1.0.6, v1.0.6 or v.1.0.6
   pull_request:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release an existing tag (e.g. 1.0.5): builds that version's code with this workflow. Leave empty to just run the tests."
+        required: false
+        default: ""
 
 jobs:
   test:
@@ -42,21 +47,25 @@ jobs:
 
   release:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Check the tag matches the manifest version
         run: |
           version=$(node -p "require('./src/manifest.json').version")
-          # accept v1.0.4 and v.1.0.4
-          tagged="${GITHUB_REF_NAME#v}"
+          # accept 1.0.4, v1.0.4 and v.1.0.4
+          tagged="${TAG#v}"
           tagged="${tagged#.}"
           if [ "$tagged" != "$version" ]; then
-            echo "Tag $GITHUB_REF_NAME doesn't match manifest version $version" >&2
+            echo "Tag $TAG doesn't match manifest version $version" >&2
             exit 1
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
@@ -69,4 +78,4 @@ jobs:
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "srg-owned-$VERSION.zip" --title "SRG Owned $VERSION" --generate-notes
+        run: gh release create "$TAG" "srg-owned-$VERSION.zip" --title "SRG Owned $VERSION" --generate-notes --verify-tag
