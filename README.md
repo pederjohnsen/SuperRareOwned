@@ -24,7 +24,7 @@ Titles become keys: `[CLUB]`, ` - ` and `[REPRINT]` are removed, then the series
 
 The orders list doesn't show item titles, so the import reads each order's page, where every item link carries its title as bought. [CLUB] products are taken off the store when early access ends, so their titles only survive there. It first fetches the order page's HTML quietly; if the items aren't in it (the account site is a single-page app), it shows each order inside the app instead, with a Stop button. Only orders it can't read fall back to looking up the variant IDs from the "Buy again" link on the store (`/products.json`, then `/variants/<id>`), and anything still unknown is listed by order.
 
-"Coming Soon!" placeholder listings can't be bought on their own: without a release number they never show as owned; with one (`SRG#160: Coming Soon!`) they match that number, so a game you already have through a bundle shows as owned. Bundle ranges like `SRG#158-160` count every number in the range.
+"Coming Soon!" listings can't be bought on their own, so they never get an **I own this** button. Without a release number they never show as owned; with one (`SRG#160: Coming Soon!`) they match that number, so a game you already have through a bundle shows as owned. Every release number in a title counts: bundle ranges like `SRG#158-160`, and bundles renamed after a reveal like `SRG#158: Foo + SRG#159: Bar + SRG#160: Coming Soon!`.
 
 Titles come from Shopify's `/products/<handle>.js` (and `/collections/<c>/products.json` on collection pages) and `/cart.js`, so the extension doesn't depend on the theme's layout.
 

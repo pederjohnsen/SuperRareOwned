@@ -17,6 +17,7 @@
   // Series codes are written in capitals: SRG#149, DE#2, CE#12, PS5 #17, PS4#5.
   // Case-sensitive on purpose, so "Volume #3" isn't read as a series.
   const NUMBERED = /(?<![A-Za-z0-9])([A-Z][A-Z0-9]{1,4})\s*#\s*(\d+(?:\s*[-–]\s*\d+(?!\s*[A-Za-z]))?(?:\s*[\/&+,]\s*\d+(?:\s*[-–]\s*\d+)?)*)/;
+  const NUMBERED_ALL = new RegExp(NUMBERED.source, "g");
   const KNOWN_PLATFORM = /^(switch2?|ps[345]|psvita|vita|xbox[a-z0-9]*|pc|3ds|wiiu)$/;
 
   function normPlatform(text) {
@@ -74,21 +75,28 @@
       }
     }
 
-    const nm = t.match(NUMBERED);
-    if (nm) {
+    // Every "<series>#<numbers>" in the title counts, so a bundle renamed after a
+    // reveal ("SRG#158: Foo + SRG#159: Bar + SRG#160: Coming Soon!") still covers
+    // each game, as does "SRG#158-160" or "SRG# 107/108".
+    const ids = [];
+    for (const nm of t.matchAll(NUMBERED_ALL)) {
       const series = nm[1].toUpperCase();
-      const numbers = [];
       for (const part of nm[2].split(/\s*[\/&+,]\s*/)) {
         const r = part.match(/^(\d+)\s*[-–]\s*(\d+)$/); // bundle ranges: SRG#158-160
         const a = parseInt(r ? r[1] : part, 10), b = r ? parseInt(r[2], 10) : a;
-        for (let n = a; n <= b && n - a < 30; n++) numbers.push(String(n));
+        for (let n = a; n <= b && n - a < 30; n++) {
+          const id = prefix + series + "#" + n;
+          if (!ids.includes(id)) ids.push(id);
+        }
       }
+    }
+    if (ids.length) {
       return {
         title: cleanTitle(title),
         platform,
         comingSoon,
         numbered: true,
-        units: numbers.map((n) => ({ id: prefix + series + "#" + n, platform })),
+        units: ids.map((id) => ({ id, platform })),
       };
     }
 

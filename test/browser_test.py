@@ -88,7 +88,7 @@ with sync_playwright() as p:
     pg.goto(BASE + "/collections/club-26-products")
     grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
 
-    check("toggle on each card except the unnumbered Coming Soon!", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 1))
+    check("toggle on each card except Coming Soon! ones", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 2))
     check("nav link isn't decorated", lambda: expect(pg.locator("header .srgo-toggle")).to_have_count(0))
 
     def mark_club_grapple():
@@ -104,7 +104,12 @@ with sync_playwright() as p:
         expect(plain.locator(".srgo-badge, .srgo-toggle")).to_have_count(0)
         numbered = pg.locator("li.grid__item", has_text="SRG#149: Coming Soon!")
         expect(numbered.locator(".srgo-badge")).to_have_text("✓ Owned")  # owned through SRG#149
-    check("Coming Soon!: unnumbered never owned, numbered follows its number", coming_soon)
+        expect(numbered.locator(".srgo-toggle")).to_have_count(0)  # can't be bought on its own
+        pg.goto("https://superraregames.com/products/club-srg-149-coming-soon")
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
+        expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_count(0)
+        pg.goto("https://superraregames.com/collections/club-26-products")
+    check("Coming Soon!: no button; numbered one shows owned via its number", coming_soon)
     pg.screenshot(path=os.path.join(OUT, "collection.png"))
 
     def public_page_owned():

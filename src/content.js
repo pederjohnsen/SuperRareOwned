@@ -152,13 +152,14 @@
     const st = K.status(title, owned);
     const text = label(st);
     const state = !text ? "none" : st.owned === st.total ? "owned" : "partial";
-    if (card.dataset.srgoState === state && (card.querySelector(":scope > .srgo-toggle") || !st.total)) return;
+    if (card.dataset.srgoState === state && (card.querySelector(":scope > .srgo-toggle") || !st.total || st.parsed.comingSoon)) return;
     card.dataset.srgoState = state;
     card.classList.add("srgo-card");
     if (getComputedStyle(card).position === "static") card.classList.add("srgo-relative");
     card.querySelectorAll(":scope > .srgo-badge, :scope > .srgo-toggle").forEach((n) => n.remove());
     if (text) card.appendChild(el("span", "srgo-badge srgo-" + state, (state === "owned" ? "✓ " : "") + text));
-    if (st.total) card.appendChild(toggleButton(title, st)); // nothing to own on "Coming Soon!" placeholders
+    // "Coming Soon!" listings can't be bought on their own; they only show as owned via a bundle
+    if (st.total && !st.parsed.comingSoon) card.appendChild(toggleButton(title, st));
   }
 
   async function scanCards() {
@@ -200,7 +201,7 @@
     }
     bar.replaceChildren();
     if (text) bar.appendChild(el("span", "srgo-badge srgo-inline srgo-" + (st.owned === st.total ? "owned" : "partial"), text));
-    if (st.total) bar.appendChild(toggleButton(title, st));
+    if (st.total && !st.parsed.comingSoon) bar.appendChild(toggleButton(title, st));
 
     const form = document.querySelector("main form[action*='/cart/add'], form[action*='/cart/add']");
     let warn = document.querySelector(".srgo-pdp-warning");

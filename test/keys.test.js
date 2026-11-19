@@ -91,6 +91,11 @@ test("bundle number ranges", () => {
   assert.deepEqual(ids("SRG#158-160: Spring Bundle (Switch)"), ["SRG#158|switch", "SRG#159|switch", "SRG#160|switch"]);
   assert.deepEqual(ids("SRG# 107/108: Double Pack"), ["SRG#107|", "SRG#108|"]);
   assert.deepEqual(ids("SRG#100-102 & 105 (Switch)"), ["SRG#100|switch", "SRG#101|switch", "SRG#102|switch", "SRG#105|switch"]);
+  // renamed after a reveal: every number in the title counts
+  assert.deepEqual(ids("[CLUB] SRG#158: Foo + SRG#159: Bar + SRG#160: Coming Soon! Bundle (Switch)"), ["SRG#158|switch", "SRG#159|switch", "SRG#160|switch"]);
+  assert.deepEqual(ids("PS5 #20: A & PS5 #21: B Double Pack (PS5)"), ["PS5#20|ps5", "PS5#21|ps5"]);
+  const owned = K.withOwned("[CLUB] SRG#158: Foo + SRG#159: Bar + SRG#160: Coming Soon! Bundle (Switch)", {}, true);
+  assert.equal(K.status("SRG#160: Coming Soon! (Switch)", owned).owned, 1);
   // a dash before words is a subtitle, not a range
   assert.deepEqual(ids("SRG#149 - Grapple Dogs (Switch)"), ["SRG#149|switch"]);
 });
