@@ -1,6 +1,6 @@
 # Store listing kit
 
-Everything to paste into the Chrome Web Store and Firefox Add-ons (AMO) forms. Screenshots and the promo tile are in this folder. The upload is the zip from the latest GitHub release (or `zip -r ../srg-owned.zip .` inside `src/`).
+Everything to paste into the Chrome Web Store and Firefox Add-ons (AMO) forms. Screenshots, the store icon and the promo tile are in this folder. The upload is the zip from the latest GitHub release (or `zip -r ../srg-owned.zip .` inside `src/`).
 
 ## Shared
 
@@ -36,6 +36,8 @@ Private by design: no account, no server, no tracking. Your list stays in your b
 
 SRG Owned is an unofficial tool. It is not made by or affiliated with Super Rare Games.
 ```
+
+**Store icon:** `icon-128.png` (128×128, the artwork in the middle 96×96 with transparent padding, as the Chrome Web Store asks). Firefox and Edge take their icon from the extension itself, so it's only needed for Chrome. Regenerate with `python3 tools/store_icon.py`.
 
 **Screenshot captions** (files in this folder, 1280×800):
 
@@ -94,6 +96,6 @@ No data is sent anywhere except requests to superraregames.com itself (product, 
 
 - [ ] Use **Export** in your current unpacked copy: the store version has a different extension ID and starts with an empty list. Import the file into the store version afterwards.
 - [ ] Optional: ask Super Rare Games if they're happy with the name "SRG Owned" (the listing and extension already say it's unofficial).
-- [ ] Chrome: register at https://chrome.google.com/webstore/devconsole (one-time US$5), upload the zip, fill in the listing and Privacy practices tab from above, add screenshots and the small promo tile (`promo-440x280.png`).
+- [ ] Chrome: register at https://chrome.google.com/webstore/devconsole (one-time US$5), upload the zip, fill in the listing and Privacy practices tab from above, add the store icon (`icon-128.png`), screenshots and the small promo tile (`promo-440x280.png`).
 - [ ] Firefox: sign in at https://addons.mozilla.org/developers/ with a Mozilla account, submit a new add-on, choose "On this site", upload the same zip, fill in the listing from above.
 - [ ] Edge (optional, free): https://partner.microsoft.com/dashboard/microsoftedge/ accepts the same zip and the same texts.
