@@ -88,7 +88,12 @@ with sync_playwright() as p:
     pg.goto(BASE + "/collections/club-26-products")
     grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
 
-    check("toggle on each card except Coming Soon! ones", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 2))
+    def toggles_on_listing():
+        expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION) - 3)
+        # none on the double pack (a bundle) or the two Coming Soon! listings
+        for t in ["Double Pack", "[CLUB] Coming Soon!", "SRG#149: Coming Soon!"]:
+            expect(pg.locator("li.grid__item", has_text=t).locator(".srgo-toggle")).to_have_count(0)
+    check("toggle only on single releases on the listing page", toggles_on_listing)
     check("nav link isn't decorated", lambda: expect(pg.locator("header .srgo-toggle")).to_have_count(0))
 
     def mark_club_grapple():
@@ -118,13 +123,14 @@ with sync_playwright() as p:
         expect(pg.locator(".srgo-pdp-warning")).to_have_text("You already own this.")
         expect(pg.locator(".breadcrumb .srgo-toggle")).to_have_count(0)
         expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "none")
-    check("public product page shows owned + warning", public_page_owned)
+        expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(0)  # no marking from recommendations
+    check("public product page shows owned + warning; no toggle on recommendations", public_page_owned)
     pg.screenshot(path=os.path.join(OUT, "product.png"))
 
     def same_number_other_platform():
-        pg.locator("li.grid__item", has_text="Cassette Beasts").hover()
-        pg.locator("li.grid__item", has_text="Cassette Beasts").locator(".srgo-toggle").click()
-        expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "owned")
+        pg.goto(BASE + "/products/deluxe-edition-de-2-cassette-beasts-switch")
+        pg.locator(".srgo-pdp .srgo-toggle").click()
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
         pg.goto(BASE + "/collections/club-26-products")
         expect(pg.locator("li.grid__item", has_text="Laika")).to_have_attribute("data-srgo-state", "none")
     check("DE#2 Switch owned doesn't mark DE#2 PS5", same_number_other_platform)

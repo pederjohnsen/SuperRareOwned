@@ -11,7 +11,7 @@ Browser extension (Chrome and Firefox) that marks Super Rare Games releases you 
 ## Use
 
 - **Import from your orders:** open [your orders](https://account.superraregames.com/orders) and click **Import from all orders** in the SRG Owned panel. It loads every order, skips cancelled and refunded ones, reads each order's items (titles as bought, so [CLUB] products still count after they've left the store), then gives you an **Open the review** link to a review list: numbered games are ticked, merch is unticked, and nothing is saved until you click **Add**. Unshipped pre-orders count as owned. On a single order's page, **Add this order's games** does the same for that order.
-- Hover a product card and click **I own this**, or use the button under the title on a product page.
+- To mark a single release as owned (or remove it), hover its card on a store listing page and click **I own this**, or use the button under the title on its own product page. That's the only place the button appears: not in the cart, recommendations or elsewhere, and not on bundles or "Coming Soon!" listings. Badges still show everywhere.
 - Or click the toolbar icon → **Manage owned games** and paste titles or numbers (`SRG#149`, `PS5#17`, `DE#2 (Switch)`), one per line.
 - Owned games are greyed out with a green **✓ Owned** badge. Bundles you partly own show "1 of 2 owned".
 - Product pages you own show **You already own this.** above Add to cart.
