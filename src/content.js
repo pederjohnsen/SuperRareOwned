@@ -104,6 +104,22 @@
     return e;
   }
 
+  // Release pages have their own themes, some with rules strong enough to beat any
+  // stylesheet (ids plus !important, -webkit-text-fill-color). Inline !important
+  // styles beat all of them, so the text look of what we add is pinned here too
+  // (content.css still holds the full design).
+  const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  function lock(e, styles) {
+    const all = {
+      "font-family": FONT, "font-style": "normal", "font-variant": "normal", "text-transform": "none",
+      "letter-spacing": "normal", "word-spacing": "normal", "text-shadow": "none", "text-decoration": "none",
+      "text-indent": "0", "text-align": "left", "-webkit-text-stroke": "0", ...styles,
+    };
+    if (all.color) all["-webkit-text-fill-color"] = all.color;
+    for (const [k, v] of Object.entries(all)) e.style.setProperty(k, v, "important");
+    return e;
+  }
+
   function label(st) {
     if (!st.total) return null;
     if (st.owned === st.total) return "Owned";
@@ -111,11 +127,23 @@
     return null;
   }
 
+  function badge(cls, text, full, compact) {
+    return lock(el("span", cls, text), {
+      color: "#fff", "background-color": full ? "#15803d" : "#b45309", "background-image": "none",
+      "font-size": compact ? "12px" : "13px", "font-weight": "700", "line-height": "1.2", "letter-spacing": "0.02em", "white-space": "nowrap",
+    });
+  }
+
   function toggleButton(title, st, short) {
     const isOwned = st.total > 0 && st.owned === st.total;
-    const b = el("button", "srgo-toggle", isOwned ? (short ? "Remove" : "Remove from owned") : "I own this");
+    const b = lock(el("button", "srgo-toggle", isOwned ? (short ? "Remove" : "Remove from owned") : "I own this"), {
+      color: "#111", "font-size": "12px", "font-weight": "600", "line-height": "1.2", "white-space": "nowrap",
+    });
     b.type = "button";
-    b.title = isOwned ? "Remove from your owned games" : "Add to your owned games";
+    const many = st.parsed.bundle && st.total > 1;
+    b.title = isOwned
+      ? many ? "Remove everything in this from your owned games" : "Remove from your owned games"
+      : many ? "Add everything in this to your owned games" : "Add to your owned games";
     b.addEventListener(
       "click",
       (e) => {
@@ -139,9 +167,11 @@
   const onListingPage = /^\/collections\/[^/]+\/?$/.test(location.pathname);
   const IN_CART = "[role='dialog'], dialog, [id*='cart' i], [class*='cart' i], [id*='drawer' i], [class*='drawer' i]";
 
-  // Only a single release that can be bought on its own: not bundles, not "Coming Soon!".
+  // A release or a bundle (marking a bundle marks everything in it). Not a
+  // "Coming Soon!" listing on its own: you can't own one until it's revealed,
+  // only through a bundle that has it.
   function editable(st) {
-    return st.total === 1 && !st.parsed.comingSoon;
+    return st.total > 0 && (!!st.parsed.bundle || !st.parsed.comingSoon);
   }
 
   // ---------- product panels: a release's own page, and its quick view ----------
@@ -196,14 +226,18 @@
     if (bar.dataset.sig !== sig) {
       bar.dataset.sig = sig;
       bar.replaceChildren();
-      if (text) bar.appendChild(el("span", "srgo-badge srgo-inline srgo-" + (full ? "owned" : "partial"), (full ? "✓ " : "") + text));
+      if (text) bar.appendChild(badge("srgo-badge srgo-inline srgo-" + (full ? "owned" : "partial"), (full ? "✓ " : "") + text, full, false));
       if (editable(st)) bar.appendChild(toggleButton(title, st));
     }
 
     let warn = form.previousElementSibling && form.previousElementSibling.classList.contains("srgo-pdp-warning") ? form.previousElementSibling : null;
     if (text) {
       if (!warn) {
-        warn = el("div", "srgo-pdp-warning srgo-ui");
+        warn = lock(el("div", "srgo-pdp-warning srgo-ui"), {
+          color: "#7f1d1d", "background-color": "#fee2e2", "background-image": "none", border: "2px solid #dc2626",
+          "border-radius": "8px", padding: "12px 14px", margin: "0 0 12px", display: "block",
+          "font-size": "16px", "font-weight": "700", "line-height": "1.3", opacity: "1",
+        });
         warn.setAttribute("role", "alert");
         form.insertAdjacentElement("beforebegin", warn);
       }
@@ -263,7 +297,7 @@
     const w = cover.getBoundingClientRect().width;
     const compact = w > 0 && w < 130;
     if (text) {
-      const b = el("span", "srgo-badge srgo-" + state + (compact ? " srgo-compact" : ""), compact ? (state === "owned" ? "✓" : `${st.owned}/${st.total}`) : (state === "owned" ? "✓ " : "") + text);
+      const b = badge("srgo-badge srgo-" + state + (compact ? " srgo-compact" : ""), compact ? (state === "owned" ? "✓" : `${st.owned}/${st.total}`) : (state === "owned" ? "✓ " : "") + text, state === "owned", compact);
       if (compact) b.title = text;
       cover.appendChild(b);
     }
@@ -331,26 +365,26 @@
     }
     if (panel && panel.dataset.sig === sig) return;
     if (!panel) {
-      panel = el("div", "srgo-cart srgo-ui");
+      panel = lock(el("div", "srgo-cart srgo-ui"), { color: "#7f1d1d", "background-color": "#fff", "background-image": "none", "font-size": "14px", "line-height": "1.4" });
       panel.setAttribute("role", "alert");
       document.body.appendChild(panel);
     }
     panel.dataset.sig = sig;
     panel.replaceChildren();
     panel.appendChild(
-      el("strong", null, hits.length === 1 ? "Your cart has a game you already own" : `Your cart has ${hits.length} games you already own`)
+      lock(el("strong", null, hits.length === 1 ? "Your cart has a game you already own" : `Your cart has ${hits.length} games you already own`), { color: "#7f1d1d", "font-size": "15px", "font-weight": "700", "line-height": "1.3" })
     );
     const ul = el("ul");
     for (const h of hits)
-      ul.appendChild(el("li", null, h.title + (h.st.owned < h.st.total ? ` (${h.st.owned} of ${h.st.total} owned)` : "")));
+      ul.appendChild(lock(el("li", null, h.title + (h.st.owned < h.st.total ? ` (${h.st.owned} of ${h.st.total} owned)` : "")), { color: "#111", "font-size": "14px", "font-weight": "400", "line-height": "1.4" }));
     panel.appendChild(ul);
     const row = el("div", "srgo-cart-actions");
     if (!/^\/cart\/?$/.test(location.pathname)) {
-      const a = el("a", null, "View cart");
+      const a = lock(el("a", null, "View cart"), { color: "#b91c1c", "font-size": "14px", "font-weight": "600", "text-decoration": "underline" });
       a.href = "/cart";
       row.appendChild(a);
     }
-    const close = el("button", null, "Dismiss");
+    const close = lock(el("button", null, "Dismiss"), { color: "#111", "font-size": "14px", "font-weight": "400", "line-height": "1.2" });
     close.type = "button";
     close.addEventListener("click", () => {
       try {

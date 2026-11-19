@@ -71,6 +71,8 @@ THEME = """
   letter-spacing: 3px; font-weight: 300; line-height: 3; font-style: italic; text-shadow: 0 0 2px #000; }
 .product__right-column-sticky div { background: transparent; border: 0; padding: 0; margin: 0; border-radius: 0; display: grid; }
 div { text-transform: uppercase !important; }
+body:not(#theme) .product__right-column-sticky div, body:not(#theme) .product__right-column-sticky span, body:not(#theme) .product__right-column-sticky button {
+  color: #2dd4bf !important; -webkit-text-fill-color: #2dd4bf !important; font-family: Georgia, serif !important; }
 button { font-size: 30px !important; }
 """
 
@@ -154,9 +156,10 @@ with sync_playwright() as p:
     grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
 
     def toggles_on_listing():
-        expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(len(COLLECTION) - 3)
-        # none on the double pack (a bundle) or the two Coming Soon! listings
-        for t in ["Double Pack", "[CLUB] Coming Soon!", "SRG#149: Coming Soon!"]:
+        expect(pg.locator("li.grid__item .srgo-toggle")).to_have_count(len(COLLECTION) - 2)
+        # none on the two Coming Soon! listings (a bundle like the double pack has one)
+        expect(pg.locator("li.grid__item", has_text="Double Pack").locator(".srgo-toggle")).to_have_count(1)
+        for t in ["[CLUB] Coming Soon!", "SRG#149: Coming Soon!"]:
             expect(pg.locator("li.grid__item", has_text=t).locator(".srgo-toggle")).to_have_count(0)
     check("toggle only on single releases on the listing page", toggles_on_listing)
     check("menu link isn't decorated", lambda: expect(pg.locator("header nav .srgo-toggle, header nav .srgo-badge")).to_have_count(0))
@@ -227,6 +230,9 @@ with sync_playwright() as p:
                        "letter-spacing": "normal", "font-style": "normal", "border-top-width": "2px", "border-top-color": "rgb(220, 38, 38)", "padding-left": "14px",
                        "border-top-left-radius": "8px", "display": "block", "text-shadow": "none"}, got
         assert "Georgia" not in css(w, "font-family")[0], css(w, "font-family")
+        assert css(w, "-webkit-text-fill-color") == ["rgb(127, 29, 29)"], css(w, "-webkit-text-fill-color")
+        assert css(pg.locator(".srgo-pdp .srgo-badge"), "-webkit-text-fill-color") == ["rgb(255, 255, 255)"]
+        assert css(pg.locator(".srgo-pdp .srgo-toggle"), "-webkit-text-fill-color") == ["rgb(17, 17, 17)"]
         badge = pg.locator(".srgo-pdp .srgo-badge")
         assert css(badge, "color", "background-color", "text-transform", "font-size") == ["rgb(255, 255, 255)", "rgb(21, 128, 61)", "none", "13px"], css(badge, "color", "background-color", "text-transform", "font-size")
         btn = pg.locator(".srgo-pdp .srgo-toggle")
@@ -328,7 +334,6 @@ with sync_playwright() as p:
         bundle = pg.locator("li.grid__item", has_text="Switch Game & Vinyl")
         game = pg.locator("li.grid__item", has_text="SRG#163")
         vinyl = pg.locator("li.grid__item", has_text="Deluxe Double Vinyl")
-        expect(bundle.locator(".srgo-toggle")).to_have_count(0)  # a bundle isn't marked by hand
         game.hover()
         game.locator(".srgo-toggle").click()
         expect(bundle.locator(".srgo-badge")).to_have_text("1 of 2 owned")  # own the game: half the bundle
@@ -337,6 +342,33 @@ with sync_playwright() as p:
         expect(bundle.locator(".srgo-badge")).to_have_text("✓ Owned")  # and the vinyl: the whole bundle
         expect(pg.locator("li.grid__item", has_text="PB#49").locator(".srgo-badge")).to_have_text("1 of 3 owned")  # SRG#163 is in PB#49 too
     check("bundles: owning the game and the vinyl separately owns the bundle", bundles)
+
+    def bundle_by_hand():
+        pg.goto(BASE + "/collections/wax-heads")
+        bundle = pg.locator("li.grid__item", has_text="Switch Game & Vinyl")
+        game = pg.locator("li.grid__item", has_text="SRG#163")
+        vinyl = pg.locator("li.grid__item", has_text="Deluxe Double Vinyl")
+        bundle.hover()
+        expect(bundle.locator(".srgo-toggle")).to_have_text("Remove")  # owned via its parts
+        bundle.locator(".srgo-toggle").click()  # removing the bundle removes what's in it
+        expect(bundle.locator(".srgo-badge")).to_have_count(0)
+        expect(game.locator(".srgo-badge")).to_have_count(0)
+        expect(vinyl.locator(".srgo-badge")).to_have_count(0)
+        bundle.hover()
+        expect(bundle.locator(".srgo-toggle")).to_have_text("I own this")
+        bundle.locator(".srgo-toggle").click()  # and marking it marks what's in it
+        expect(bundle.locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(game.locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(vinyl.locator(".srgo-badge")).to_have_text("✓ Owned")
+        # and on the bundle's own page
+        pg.goto(BASE + "/products/wax-heads-switch-game-vinyl-bundle")
+        expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_text("Remove from owned")
+        pg.locator(".srgo-pdp .srgo-toggle").click()
+        expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_text("I own this")
+        expect(pg.locator(".srgo-pdp-warning")).to_have_count(0)
+        pg.locator(".srgo-pdp .srgo-toggle").click()
+        expect(pg.locator(".srgo-pdp-warning")).to_have_text("You already own this.")
+    check("a bundle can be marked and unmarked by hand, with what's in it", bundle_by_hand)
 
     def bundle_owns_contents():
         op = ctx.new_page()
