@@ -1,0 +1,172 @@
+"""Loads the unpacked extension in Chrome for Testing and runs it against mock
+superraregames.com pages (Shopify Dawn-style markup), served via request routing."""
+import hashlib, json, os, sys, tempfile
+from playwright.sync_api import sync_playwright, expect
+
+EXT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+OUT = os.path.join(os.path.dirname(__file__), "shots")
+os.makedirs(OUT, exist_ok=True)
+
+def ext_id(path):
+    h = hashlib.sha256(path.encode()).hexdigest()[:32]
+    return "".join(chr(ord("a") + int(c, 16)) for c in h)
+
+PRODUCTS = {
+    "club-srg-149-grapple-dogs-cosmic-canines-switch": "[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)",
+    "club-srg-148-bad-end-theater-switch": "[CLUB] SRG#148: Bad End Theater (Switch)",
+    "club-srg-107-108-monster-camp-and-monster-roadtrip-double-pack": "[CLUB] SRG# 107/108: Monster Camp and Monster Roadtrip Double Pack",
+    "club-deluxe-edition-de-6-laika-aged-through-blood-switch-1": "[CLUB] - [Deluxe Edition] DE#2: Laika: Aged Through Blood (PS5)",
+    "copy-of-ps4-4-the-tartarus-key-ps4": "[CLUB] - PS4 #4: The Tartarus Key (PS4)",
+    "srg-149-grapple-dogs-cosmic-canines-switch": "SRG#149: Grapple Dogs Cosmic Canines (Switch)",
+    "deluxe-edition-de-2-cassette-beasts-switch": "[Deluxe Edition] DE#2: Cassette Beasts (Switch)",
+}
+COLLECTION = [h for h in PRODUCTS if h.startswith(("club-", "copy-of"))]
+
+def card(handle):
+    return f"""<li class="grid__item"><div class="card-wrapper product-card-wrapper"><div class="card">
+      <div class="card__inner"><div class="card__media"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"></div></div>
+      <div class="card__content"><div class="card__information"><h3 class="card__heading">
+        <a href="/collections/club-26-products/products/{handle}" class="full-unstyled-link">{PRODUCTS[handle]}</a></h3>
+        <div class="price">£24.92</div></div></div></div></div></li>"""
+
+def page(body):
+    return f"""<!doctype html><html><head><meta charset="utf-8"><title>SRG mock</title>
+    <style>body{{font-family:sans-serif;margin:0}} header{{padding:10px;background:#222;color:#fff}}
+    ul.grid{{display:grid;grid-template-columns:repeat(4,240px);gap:16px;list-style:none;padding:16px}}
+    .card__media img{{width:100%;height:auto;display:block}}</style></head>
+    <body><header><nav><a href="/products/srg-149-grapple-dogs-cosmic-canines-switch">Menu link</a></nav></header>
+    <main>{body}</main></body></html>"""
+
+state = {"cart": []}
+
+def handle_route(route):
+    url = route.request.url
+    path = url.split("superraregames.com", 1)[1].split("?")[0]
+    if path.startswith("/collections/club-26-products/products.json"):
+        return route.fulfill(json={"products": [{"handle": h, "title": PRODUCTS[h]} for h in COLLECTION]})
+    if path == "/collections/club-26-products":
+        return route.fulfill(content_type="text/html", body=page('<h1>Club Products 2026</h1><ul class="grid">' + "".join(card(h) for h in COLLECTION) + "</ul>"))
+    if path.startswith("/products/") and path.endswith(".js"):
+        h = path[len("/products/"):-3]
+        if h in PRODUCTS:
+            return route.fulfill(json={"handle": h, "title": PRODUCTS[h]})
+        return route.fulfill(status=404, body="")
+    if path.startswith("/products/"):
+        h = path[len("/products/"):]
+        rec = '<h2>Have you seen</h2><ul class="grid">' + card("deluxe-edition-de-2-cassette-beasts-switch") + "</ul>"
+        return route.fulfill(content_type="text/html", body=page(
+            f'<div class="product"><nav class="breadcrumb"><a href="/products/{h}">{PRODUCTS[h]}</a></nav><h1>{PRODUCTS[h]}</h1><p>£37.20</p>'
+            f'<form action="/cart/add" method="post"><button type="submit" name="add">Add to cart</button></form></div>{rec}'))
+    if path == "/cart.js":
+        return route.fulfill(json={"items": [{"handle": h, "product_title": PRODUCTS[h], "quantity": 1} for h in state["cart"]]})
+    if path in ("/cart", "/"):
+        return route.fulfill(content_type="text/html", body=page("<h1>Your cart</h1>"))
+    return route.fulfill(status=404, body="")
+
+failures = []
+def check(name, fn):
+    try:
+        fn(); print("PASS", name)
+    except Exception as e:
+        failures.append(name); print("FAIL", name, "-", str(e).splitlines()[0])
+
+with sync_playwright() as p:
+    profile = tempfile.mkdtemp()
+    ctx = p.chromium.launch_persistent_context(
+        profile, executable_path="/usr/bin/google-chrome", headless=False,
+        args=["--headless=new", f"--disable-extensions-except={EXT}", f"--load-extension={EXT}", "--no-sandbox"],
+        viewport={"width": 1100, "height": 900})
+    ctx.route("https://superraregames.com/**", handle_route)
+    pg = ctx.new_page()
+    errors = []
+    pg.on("pageerror", lambda e: errors.append(str(e)))
+
+    BASE = "https://superraregames.com"
+    pg.goto("about:blank"); pg.wait_for_timeout(1500)  # let the freshly loaded extension register first
+    pg.goto(BASE + "/collections/club-26-products")
+    grapple = pg.locator("li.grid__item", has_text="Grapple Dogs")
+
+    check("toggle appears on each card", lambda: expect(pg.locator("li.grid__item > .srgo-toggle")).to_have_count(len(COLLECTION)))
+    check("nav link isn't decorated", lambda: expect(pg.locator("header .srgo-toggle")).to_have_count(0))
+
+    def mark_club_grapple():
+        grapple.hover()
+        grapple.locator(".srgo-toggle").click()
+        expect(grapple.locator(".srgo-badge")).to_have_text("✓ Owned")
+        expect(grapple).to_have_attribute("data-srgo-state", "owned")
+        expect(pg).to_have_url(BASE + "/collections/club-26-products")  # click didn't navigate
+    check("marking a club card owned", mark_club_grapple)
+    pg.screenshot(path=os.path.join(OUT, "collection.png"))
+
+    def public_page_owned():
+        pg.goto(BASE + "/products/srg-149-grapple-dogs-cosmic-canines-switch")
+        expect(pg.locator(".srgo-pdp .srgo-badge")).to_have_text("Owned")
+        expect(pg.locator(".srgo-pdp-warning")).to_have_text("You already own this.")
+        expect(pg.locator(".breadcrumb .srgo-toggle")).to_have_count(0)
+        expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "none")
+    check("public product page shows owned + warning", public_page_owned)
+    pg.screenshot(path=os.path.join(OUT, "product.png"))
+
+    def same_number_other_platform():
+        pg.locator("li.grid__item", has_text="Cassette Beasts").hover()
+        pg.locator("li.grid__item", has_text="Cassette Beasts").locator(".srgo-toggle").click()
+        expect(pg.locator("li.grid__item", has_text="Cassette Beasts")).to_have_attribute("data-srgo-state", "owned")
+        pg.goto(BASE + "/collections/club-26-products")
+        expect(pg.locator("li.grid__item", has_text="Laika")).to_have_attribute("data-srgo-state", "none")
+    check("DE#2 Switch owned doesn't mark DE#2 PS5", same_number_other_platform)
+
+    eid = ext_id(EXT)
+    def options_add_and_bundle():
+        op = ctx.new_page()
+        op.goto(f"chrome-extension://{eid}/options.html")
+        expect(op.locator("#list li")).to_have_count(2)
+        op.fill("#add", "srg#107\nnonsense ###\nSRG#149")
+        op.click("#add-btn")
+        expect(op.locator("#add-result")).to_contain_text("Added 2")  # "nonsense ###" becomes a name key, so it's added too
+        expect(op.locator("#add-result")).to_contain_text("1 already owned")
+        expect(op.locator("#list li")).to_have_count(4)
+        op.screenshot(path=os.path.join(OUT, "options.png"), full_page=True)
+        expect(pg.locator("li.grid__item", has_text="Double Pack").locator(".srgo-badge")).to_have_text("1 of 2 owned")
+        # remove the junk line again
+        op.locator("#list li", has_text="nonsense").get_by_role("button").click()
+        expect(op.locator("#list li")).to_have_count(3)
+        op.close()
+    check("options page add + bundle partial updates open tab live", options_add_and_bundle)
+
+    def cart_warning():
+        state["cart"] = ["club-srg-149-grapple-dogs-cosmic-canines-switch", "club-srg-148-bad-end-theater-switch"]
+        pg.goto(BASE + "/cart")
+        expect(pg.locator(".srgo-cart")).to_contain_text("Your cart has a game you already own")
+        expect(pg.locator(".srgo-cart li")).to_have_count(1)
+        expect(pg.locator(".srgo-cart li")).to_have_text("SRG#149: Grapple Dogs Cosmic Canines (Switch)")
+        pg.screenshot(path=os.path.join(OUT, "cart.png"))
+        pg.locator(".srgo-cart button").click()
+        expect(pg.locator(".srgo-cart")).to_have_count(0)
+        pg.reload()
+        pg.wait_for_timeout(1500)
+        expect(pg.locator(".srgo-cart")).to_have_count(0)  # dismissed for this cart
+        state["cart"].append("club-srg-107-108-monster-camp-and-monster-roadtrip-double-pack")
+        pg.reload()
+        expect(pg.locator(".srgo-cart")).to_contain_text("2 games you already own")
+        expect(pg.locator(".srgo-cart")).to_contain_text("(1 of 2 owned)")
+    check("cart warning, dismiss, reappears when cart changes", cart_warning)
+
+    def unmark():
+        pg.goto(BASE + "/products/srg-149-grapple-dogs-cosmic-canines-switch")
+        pg.locator(".srgo-pdp .srgo-toggle").click()
+        expect(pg.locator(".srgo-pdp-warning")).to_have_count(0)
+        expect(pg.locator(".srgo-pdp .srgo-toggle")).to_have_text("I own this")
+    check("unmark from product page", unmark)
+
+    def popup():
+        pp = ctx.new_page()
+        pp.goto(f"chrome-extension://{eid}/popup.html")
+        expect(pp.locator("#count")).to_have_text("2")
+        pp.close()
+    check("popup count", popup)
+
+    check("no page errors", lambda: (_ for _ in ()).throw(AssertionError("; ".join(errors))) if errors else None)
+    ctx.close()
+
+print("\n%d failed" % len(failures) if failures else "\nall passed")
+sys.exit(1 if failures else 0)

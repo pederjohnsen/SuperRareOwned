@@ -1,0 +1,7 @@
+dist/
+test/shots/
+__pycache__/
+node_modules/
+.web-extension-id
+*.xpi
+.DS_Store

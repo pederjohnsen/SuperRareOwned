@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "SRG Owned",
+  "version": "0.1.0",
+  "description": "Marks Super Rare Games releases you already own, including club early-access copies, and warns when they're in your cart.",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://superraregames.com/*", "https://*.superraregames.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://superraregames.com/*", "https://*.superraregames.com/*"],
+      "js": ["keys.js", "store.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "SRG Owned",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "srg-owned@personal",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  }
+}

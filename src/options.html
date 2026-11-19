@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SRG Owned – your games</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Your owned games</h1>
+    <p class="lead">Games here show as <span class="pill">✓ Owned</span> on superraregames.com, including the [CLUB] early-access copies. The list syncs through your browser account.</p>
+
+    <section aria-labelledby="add-h">
+      <h2 id="add-h">Add games</h2>
+      <p class="hint">One per line. Paste full titles from the store, or just the number: <code>SRG#149</code>, <code>PS5#17</code>, <code>DE#2 (Switch)</code>. Numbers without a platform match any platform. Easiest of all: click <b>I own this</b> on the store.</p>
+      <textarea id="add" rows="5" spellcheck="false" placeholder="SRG#149: Grapple Dogs Cosmic Canines (Switch)&#10;PS5#28&#10;DE#2 (Switch)"></textarea>
+      <div class="row">
+        <button id="add-btn" class="primary" type="button">Add</button>
+        <span id="add-result" role="status"></span>
+      </div>
+    </section>
+
+    <section aria-labelledby="list-h">
+      <div class="row spread">
+        <h2 id="list-h">Owned <span id="count"></span></h2>
+        <input id="filter" type="search" placeholder="Filter" aria-label="Filter owned games">
+      </div>
+      <ul id="list"></ul>
+      <p id="empty" hidden>Nothing yet.</p>
+    </section>
+
+    <section aria-labelledby="backup-h">
+      <h2 id="backup-h">Backup</h2>
+      <div class="row">
+        <button id="export" type="button">Export</button>
+        <label class="button">Import<input id="import" type="file" accept="application/json,.json" hidden></label>
+        <span id="backup-result" role="status"></span>
+      </div>
+      <p class="hint">Import adds to your list; it doesn't remove anything.</p>
+    </section>
+  </main>
+  <script src="keys.js"></script>
+  <script src="store.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+:root { color-scheme: light dark; --fg: #111; --muted: #555; --bg: #fff; --line: #ddd; --accent: #15803d; }
+@media (prefers-color-scheme: dark) { :root { --fg: #eee; --muted: #aaa; --bg: #1b1b1b; --line: #3a3a3a; --accent: #22c55e; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 20px 48px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 0; }
+section { margin-top: 28px; }
+.lead, .hint { color: var(--muted); }
+.hint { font-size: 13px; margin: 6px 0 8px; }
+.pill { display: inline-block; padding: 0 8px; border-radius: 999px; background: #15803d; color: #fff; font-weight: 700; font-size: 13px; }
+code { font-size: 13px; }
+textarea, input[type="search"] { box-sizing: border-box; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 13px; }
+.row { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+button, .button { box-sizing: border-box; font: inherit; font-weight: 600; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 14px; min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:focus-visible, .button:focus-within, input:focus-visible, textarea:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+#list { list-style: none; padding: 0; margin: 10px 0 0; border-top: 1px solid var(--line); }
+#list li { display: flex; gap: 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+#list .t { flex: 1; }
+#list .k { color: var(--muted); font-size: 12px; font-family: ui-monospace, monospace; }
+#list button { min-height: 30px; padding: 2px 10px; font-weight: 500; font-size: 13px; }
+#count { color: var(--muted); font-weight: 400; }
