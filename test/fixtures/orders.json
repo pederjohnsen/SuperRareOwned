@@ -22,17 +22,17 @@
   "items": [
    [
     "[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)",
-    "club-srg-149-grapple-dogs-cosmic-canines-switch",
+    null,
     "111"
    ],
    [
     "[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)",
-    "club-steelbook-srg-88-lost-in-play-switch",
+    null,
     "112"
    ],
    [
     "[CLUB] SRG x Moonstone Island T-Shirt",
-    "club-srg-x-moonstone-island-t-shirt",
+    null,
     "117"
    ]
   ]
@@ -44,18 +44,24 @@
   "total": "\u00a337.20",
   "variants": [
    "113",
-   "114"
+   "114",
+   "120"
   ],
   "items": [
    [
     "[CLUB] SRG#148: Bad End Theater (Switch)",
-    "club-srg-148-bad-end-theater-switch",
+    null,
     "113"
    ],
    [
     "SRG Mixtape Volume #3",
     "srg-mixtape-volume-3",
     "114"
+   ],
+   [
+    "[CLUB] TC#164: KILL KNIGHT - Trading Card Booster Pack",
+    null,
+    "120"
    ]
   ]
  },
@@ -92,7 +98,7 @@
    ],
    [
     "[CLUB] PS5 #30: Gone Game (PS5)",
-    "club-ps5-30-gone-game-ps5",
+    null,
     "999"
    ]
   ]

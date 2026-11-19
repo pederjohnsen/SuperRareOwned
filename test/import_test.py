@@ -30,9 +30,11 @@ def server_rendered(order_id):
     o = next((x for x in FIX if x["id"] == order_id), None)
     if not o:
         return APP
-    items = "".join(
-        f'<div role="row"><div role="cell"><a aria-label="{htmllib.escape(t)}" href="https://superraregames.com/products/{h}?variant={v}&amp;sso=silent">'
-        f'<img alt="" src="data:,"></a></div><div role="cell"><span>{htmllib.escape(t)}</span></div></div>' for t, h, v in o["items"])
+    def row(t, h, v):
+        thumb = (f'<a aria-label="{htmllib.escape(t)}" href="https://superraregames.com/products/{h}?variant={v}&amp;sso=silent"><img alt="" src="data:,"></a>'
+                 if h else f'<div><img src="data:," alt="{htmllib.escape(t)}"></div>')  # off the store: no link
+        return f'<div role="row"><div aria-hidden="true"></div><div role="cell">{thumb}</div><div role="cell"><span>{htmllib.escape(t)}</span></div></div>'
+    items = "".join(row(t, h, v) for t, h, v in o["items"])
     main = (f'<div><a aria-label="Orders" href="/orders">Orders</a><h1 tabindex="-1">Order #{o["number"]}</h1><div></div><span>{o["status"]}</span></div>'
             f'<section aria-label="Order summary"><div role="table">{items}</div></section>')
     return APP.replace('<main id="main-content"></main>', f'<main id="main-content">{main}</main>')
@@ -91,9 +93,16 @@ def store(route):
         return route.fulfill(content_type="text/html", body="<h1>product</h1>")
     return route.fulfill(content_type="text/html", body="<html><body>store</body></html>")
 
+SNIPPET = open(os.path.join(HERE, "fixtures", "order-items-unlinked.html"), encoding="utf-8").read()
+SNIPPET_PAGE = ('<!doctype html><html><head><meta charset="utf-8"></head><body><div id="browser" hidden></div><main>'
+                '<div><h1 tabindex="-1">Order #777</h1><div></div><span>Confirmed 18 Nov</span></div>'
+                '<section aria-label="Order summary">' + SNIPPET + '</section></main></body></html>')
+
 def account(route):
     path = route.request.url.split("superraregames.com", 1)[1].split("?")[0]
     m = re.match(r"/orders/(\d+)$", path)
+    if path == "/orders/777":  # the real item table of an order whose [CLUB] items left the store
+        return route.fulfill(content_type="text/html", body=SNIPPET_PAGE)
     if REAL:
         if path == "/orders":
             return route.fulfill(content_type="text/html", body=open(ORDERS, encoding="utf-8").read())
@@ -176,7 +185,7 @@ with sync_playwright() as p:
     if not REAL:
         def review_contents():
             expect(pg.locator("button[aria-label='Show more orders']")).to_have_count(0)  # clicked until gone
-            expect(review.locator("#import-status")).to_have_text("From 4 orders: 4 games to add, 2 other items, 1 already owned.")
+            expect(review.locator("#import-status")).to_have_text("From 4 orders: 4 games to add, 3 other items, 1 already owned.")
             games = review.locator(".pick").nth(0).locator("label")
             # every [CLUB] item identified from its order page, though the store no longer has it
             expect(games).to_have_text([
@@ -187,7 +196,8 @@ with sync_playwright() as p:
             ])
             expect(games.locator("input:checked")).to_have_count(4)
             other = review.locator(".pick").nth(1).locator("label")
-            expect(other).to_have_text(["SRG Mixtape Volume #3Order #1002", "SRG x Moonstone Island T-ShirtOrder #1003"])
+            expect(other).to_have_text(["SRG Mixtape Volume #3Order #1002", "SRG x Moonstone Island T-ShirtOrder #1003",
+                                        "TC#164: KILL KNIGHT - Trading Card Booster PackOrder #1002"])
             expect(other.locator("input:checked")).to_have_count(0)
             expect(review.locator(".note", has_text="cancelled")).to_contain_text("#1001")
             expect(review.locator(".note", has_text="Couldn't read")).to_have_text(re.compile(r"#1004$"))
@@ -237,6 +247,15 @@ with sync_playwright() as p:
         check("real saved order page", real_order)
 
     if not REAL:
+        def real_unlinked_rows():
+            pg.goto("https://account.superraregames.com/orders/777")
+            r3 = run_import()
+            expect(r3.locator("#import-status")).to_contain_text("From 1 order: 2 games to add, 1 other item", timeout=15000)
+            expect(r3.locator(".pick").nth(0).locator("label")).to_have_text([
+                "PS5#33: KILL KNIGHT (PS5)Order #777", "SRG#164: KILL KNIGHT (Switch)Order #777"])
+            expect(r3.locator(".pick").nth(1).locator("label")).to_have_text(["TC#164: KILL KNIGHT - Trading Card Booster PackOrder #777"])
+        check("your real order table: [CLUB] items without links are read", real_unlinked_rows)
+
         def stale_tab():
             # what happens when you reload the extension with an orders tab open
             pg.goto("https://account.superraregames.com/orders")

@@ -79,8 +79,10 @@
     // reveal ("SRG#158: Foo + SRG#159: Bar + SRG#160: Coming Soon!") still covers
     // each game, as does "SRG#158-160" or "SRG# 107/108".
     const ids = [];
+    const seriesSeen = [];
     for (const nm of t.matchAll(NUMBERED_ALL)) {
       const series = nm[1].toUpperCase();
+      if (!seriesSeen.includes(series)) seriesSeen.push(series);
       for (const part of nm[2].split(/\s*[\/&+,]\s*/)) {
         const r = part.match(/^(\d+)\s*[-–]\s*(\d+)$/); // bundle ranges: SRG#158-160
         const a = parseInt(r ? r[1] : part, 10), b = r ? parseInt(r[2], 10) : a;
@@ -96,6 +98,8 @@
         platform,
         comingSoon,
         numbered: true,
+        kind,
+        series: seriesSeen,
         units: ids.map((id) => ({ id, platform })),
       };
     }
@@ -104,6 +108,15 @@
     const name = t.replace(BRACKETED, " ").toLowerCase().replace(/[^a-z0-9]/g, "");
     if (!name) return { title: cleanTitle(title), platform, numbered: false, units: [] };
     return { title: cleanTitle(title), platform, numbered: false, units: [{ id: "name:" + prefix + name, platform }] };
+  }
+
+  // Numbered series that aren't games: TC# is a release's trading card booster
+  // pack ("TC#164: KILL KNIGHT - Trading Card Booster Pack").
+  const NOT_GAMES = new Set(["TC"]);
+
+  // A game release, as opposed to merch or other extras with or without a number.
+  function isGame(parsed) {
+    return !!parsed.numbered && !parsed.series.every((x) => NOT_GAMES.has(x));
   }
 
   function unitKey(u) {
@@ -145,7 +158,7 @@
     return next;
   }
 
-  const api = { parse, cleanTitle, upcaseCodes, unitKey, ownedKeysFor, status, withOwned };
+  const api = { parse, cleanTitle, upcaseCodes, unitKey, ownedKeysFor, status, withOwned, isGame };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.SRGOKeys = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -99,3 +99,15 @@ test("bundle number ranges", () => {
   // a dash before words is a subtitle, not a range
   assert.deepEqual(ids("SRG#149 - Grapple Dogs (Switch)"), ["SRG#149|switch"]);
 });
+
+test("trading card packs aren't games", () => {
+  const tc = K.parse("[CLUB] TC#164: KILL KNIGHT - Trading Card Booster Pack");
+  assert.deepEqual(tc.units.map(K.unitKey), ["TC#164|"]);
+  assert.equal(K.isGame(tc), false);
+  assert.equal(K.isGame(K.parse("[CLUB] SRG#164: KILL KNIGHT (Switch)")), true);
+  assert.equal(K.isGame(K.parse("[CLUB] PS5#33: KILL KNIGHT (PS5)")), true);
+  assert.equal(K.isGame(K.parse("SRG x Moonstone Island T-Shirt")), false);
+  // owning the cards doesn't mean owning the game, or the other way round
+  const owned = K.withOwned("[CLUB] SRG#164: KILL KNIGHT (Switch)", {}, true);
+  assert.equal(K.status("[CLUB] TC#164: KILL KNIGHT - Trading Card Booster Pack", owned).owned, 0);
+});

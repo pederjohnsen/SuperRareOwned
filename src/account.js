@@ -47,15 +47,32 @@
 
   // Item links carry the title as bought, even for [CLUB] products that have
   // since been taken off the store.
+  // Items still on the store are links to their product page. Items that have
+  // left the store (every [CLUB] product once early access ends) are plain rows:
+  // the title is only in the thumbnail's alt text and the row's text.
   function readItems(root) {
-    const items = new Map();
+    const items = new Map(); // title -> item
     for (const a of root.querySelectorAll("main a[href*='/products/'][aria-label]")) {
       try {
         const u = new URL(a.getAttribute("href"), location.href);
         if (!/superraregames\.com$/.test(u.hostname)) continue;
+        const title = a.getAttribute("aria-label").trim();
         const handle = u.pathname.split("/products/")[1].split("/")[0];
-        items.set(handle, { title: a.getAttribute("aria-label"), handle, variantId: u.searchParams.get("variant") });
+        if (title) items.set(title, { title, handle, variantId: u.searchParams.get("variant") });
       } catch {}
+    }
+    for (const row of root.querySelectorAll("main [role='table'] [role='row']")) {
+      // order totals rows (Subtotal, Shipping, Total) have row headers; item rows don't
+      if (row.querySelector("[role='rowheader'], [role='columnheader']")) continue;
+      if (row.querySelector("a[href*='/products/'][aria-label]")) continue; // read above
+      const img = row.querySelector("img[alt]");
+      let title = img ? img.getAttribute("alt").trim() : "";
+      if (!title) {
+        const cells = row.querySelectorAll("[role='cell']");
+        const span = cells[1] && cells[1].querySelector("span");
+        title = span ? span.textContent.trim() : "";
+      }
+      if (title && !items.has(title)) items.set(title, { title, handle: null, variantId: null });
     }
     return [...items.values()];
   }

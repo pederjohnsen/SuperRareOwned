@@ -136,8 +136,8 @@
     }
     const all = [...rows.values()].sort((a, b) => a.parsed.title.localeCompare(b.parsed.title, undefined, { numeric: true }));
     const isOwned = (r) => r.st.total > 0 && r.st.owned === r.st.total;
-    const games = all.filter((r) => r.parsed.numbered && !isOwned(r));
-    const other = all.filter((r) => !r.parsed.numbered && !isOwned(r));
+    const games = all.filter((r) => K.isGame(r.parsed) && !isOwned(r));
+    const other = all.filter((r) => !K.isGame(r.parsed) && !isOwned(r));
     const already = all.filter(isOwned);
 
     status(
@@ -194,7 +194,7 @@
       groups.appendChild(ul);
     }
     group("Games", games, true, "Untick anything you bought as a gift or no longer have.");
-    group("Other items", other, false, "Merch, soundtracks and other things without a release number. Tick any you want marked as owned.");
+    group("Other items", other, false, "Merch, trading cards and other extras. Tick any you want marked as owned.");
     if (already.length) {
       const d = el("details");
       d.appendChild(el("summary", null, `${already.length} already in your owned list`));

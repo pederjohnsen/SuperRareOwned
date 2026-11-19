@@ -3,7 +3,7 @@
 <script>
 // A tiny stand-in for the account site's single-page app: same markup as the
 // real pages, client-side routing on popstate, "Show more orders" paging.
-const ORDERS = [{"number": "1004", "id": "9004", "status": "Confirmed", "total": "\u00a312.00", "variants": ["998"], "items": []}, {"number": "1003", "id": "9003", "status": "Confirmed", "total": "\u00a349.84", "variants": ["111", "112", "117"], "items": [["[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)", "club-srg-149-grapple-dogs-cosmic-canines-switch", "111"], ["[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)", "club-steelbook-srg-88-lost-in-play-switch", "112"], ["[CLUB] SRG x Moonstone Island T-Shirt", "club-srg-x-moonstone-island-t-shirt", "117"]]}, {"number": "1002", "id": "9002", "status": "Delivered 23 Oct", "total": "\u00a337.20", "variants": ["113", "114"], "items": [["[CLUB] SRG#148: Bad End Theater (Switch)", "club-srg-148-bad-end-theater-switch", "113"], ["SRG Mixtape Volume #3", "srg-mixtape-volume-3", "114"]]}, {"number": "1001", "id": "9001", "status": "Canceled", "total": "\u00a337.20", "variants": ["115"], "items": [["SRG#150: Tiny Terry's Turbo Trip (Switch)", "srg-150-tiny-terrys-turbo-trip-switch", "115"]]}, {"number": "1000", "id": "9000", "status": "Complete", "total": "\u00a355.00", "variants": ["116", "999"], "items": [["PS5 #21: Shovel Knight Dig (PS5)", "ps5-21-shovel-knight-dig-ps5", "116"], ["[CLUB] PS5 #30: Gone Game (PS5)", "club-ps5-30-gone-game-ps5", "999"]]}];
+const ORDERS = [{"number": "1004", "id": "9004", "status": "Confirmed", "total": "\u00a312.00", "variants": ["998"], "items": []}, {"number": "1003", "id": "9003", "status": "Confirmed", "total": "\u00a349.84", "variants": ["111", "112", "117"], "items": [["[CLUB] SRG#149: Grapple Dogs Cosmic Canines (Switch)", null, "111"], ["[CLUB] - [Steelbook] SRG#88: Lost in Play (Switch)", null, "112"], ["[CLUB] SRG x Moonstone Island T-Shirt", null, "117"]]}, {"number": "1002", "id": "9002", "status": "Delivered 23 Oct", "total": "\u00a337.20", "variants": ["113", "114", "120"], "items": [["[CLUB] SRG#148: Bad End Theater (Switch)", null, "113"], ["SRG Mixtape Volume #3", "srg-mixtape-volume-3", "114"], ["[CLUB] TC#164: KILL KNIGHT - Trading Card Booster Pack", null, "120"]]}, {"number": "1001", "id": "9001", "status": "Canceled", "total": "\u00a337.20", "variants": ["115"], "items": [["SRG#150: Tiny Terry's Turbo Trip (Switch)", "srg-150-tiny-terrys-turbo-trip-switch", "115"]]}, {"number": "1000", "id": "9000", "status": "Complete", "total": "\u00a355.00", "variants": ["116", "999"], "items": [["PS5 #21: Shovel Knight Dig (PS5)", "ps5-21-shovel-knight-dig-ps5", "116"], ["[CLUB] PS5 #30: Gone Game (PS5)", null, "999"]]}];
 const FIRST = 4;
 let shown = FIRST;
 const esc = (t) => t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -13,11 +13,20 @@ function card(o) {
     <a aria-label="Buy again for order #${o.number}" href="https://superraregames.com/cart/${cart}?storefront=true">Buy again</a></div>`;
 }
 function item(i) {
-  return `<div role="row"><div role="cell"><a aria-label="${esc(i[0])}" href="https://superraregames.com/products/${i[1]}?variant=${i[2]}&amp;sso=silent" target="_blank"><img alt="" src="data:,"></a></div><div role="cell"><span>${esc(i[0])}</span></div></div>`;
+  // i[1] null = product no longer on the store: the real page then has no link, just the thumbnail and text
+  const thumb = i[1]
+    ? `<a aria-label="${esc(i[0])}" href="https://superraregames.com/products/${i[1]}?variant=${i[2]}&amp;sso=silent" target="_blank"><img alt="" src="data:,"></a>`
+    : `<div><img src="data:," alt="${esc(i[0])}"></div>`;
+  return `<div role="row"><div aria-hidden="true"></div><div role="cell">${thumb}</div><div role="cell"><span>${esc(i[0])}</span></div><div role="cell"><p><span>£24.92</span></p></div></div>`;
+}
+function totals() {
+  return `<div role="table" aria-labelledby="totals"><div role="rowgroup"><div role="row"><div role="columnheader">Item</div><div role="columnheader">Value</div></div></div>
+    <div role="rowgroup"><div role="row"><div role="rowheader"><span>Subtotal · 2 items</span></div><div role="cell"><span>£49.84</span></div></div>
+    <div role="row"><div role="rowheader"><span>Total</span></div><div role="cell"><span>£49.84</span></div></div></div></div>`;
 }
 function orderHtml(o) {
   return `<div><a aria-label="Orders" href="/orders">Orders</a><h1 tabindex="-1">Order #${o.number}</h1><div></div><span>${o.status}</span></div>
-    <section aria-label="Order summary"><h2>Order summary</h2><div role="table">${o.items.map(item).join("")}</div></section>`;
+    <section aria-label="Order summary"><h2>Order summary</h2><div role="table">${o.items.map(item).join("")}</div>${totals()}</section>`;
 }
 function render() {
   const main = document.getElementById("main-content");
