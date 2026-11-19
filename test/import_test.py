@@ -214,7 +214,9 @@ with sync_playwright() as p:
             review.locator(".pick").nth(0).locator("label", has_text="Shovel Knight").click()  # untick a gift
             expect(review.locator("#import-save")).to_have_text("Add 3 selected")
             review.click("#import-save")
-            expect(review.locator("#import-status")).to_have_text("Added 3 to your owned games.")
+            expect(review.locator("#import-done")).to_have_text("Added 3 to your owned games.")
+            expect(review.locator("#import[hidden]")).to_have_count(1)  # the import section closes
+            expect(review.locator("#import-done[hidden]")).to_have_count(1, timeout=10000)  # and the note fades
             expect(review.locator("#list li")).to_have_count(4)
             expect(review.locator("#list li", has_text="Steelbook")).to_contain_text("STEELBOOK:SRG#88")
             expect(review.locator("#list li", has_text="Shovel")).to_have_count(0)
@@ -254,7 +256,12 @@ with sync_playwright() as p:
             expect(r3.locator(".pick").nth(0).locator("label")).to_have_text([
                 "PS5#33: KILL KNIGHT (PS5)Order #777", "SRG#164: KILL KNIGHT (Switch)Order #777"])
             expect(r3.locator(".pick").nth(1).locator("label")).to_have_text(["TC#164: KILL KNIGHT - Trading Card Booster PackOrder #777"])
-        check("your real order table: [CLUB] items without links are read", real_unlinked_rows)
+            r3.click("#import-cancel")
+            expect(r3.locator("#import-done")).to_have_text("Import cancelled. Nothing was added.")
+            expect(r3.locator("#import[hidden]")).to_have_count(1)
+            r3.reload()
+            expect(r3.locator("#import[hidden]")).to_have_count(1)  # nothing left waiting after a reload
+        check("your real order table: [CLUB] items without links are read; cancel closes the review", real_unlinked_rows)
 
         def stale_tab():
             # what happens when you reload the extension with an orders tab open

@@ -235,12 +235,26 @@
     };
   }
 
+  // Done (added or cancelled): close the import section and leave a short
+  // confirmation at the top of the page that fades after a few seconds.
+  let doneTimer = null;
   function finish(text) {
     running++;
     $("import-groups").replaceChildren();
     $("import-notes").replaceChildren();
     $("import-actions").hidden = true;
-    $("import-status").textContent = text;
+    $("import-status").textContent = "";
+    $("import").hidden = true;
+    const done = $("import-done");
+    done.textContent = text;
+    done.hidden = false;
+    done.classList.remove("fading");
+    clearTimeout(doneTimer);
+    doneTimer = setTimeout(() => {
+      done.classList.add("fading");
+      doneTimer = setTimeout(() => (done.hidden = true), 600);
+    }, 6000);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function check() {
