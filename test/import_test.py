@@ -188,7 +188,6 @@ with sync_playwright() as p:
 
     if not REAL:
         def review_contents():
-            expect(pg.locator("button[aria-label='Show more orders']")).to_have_count(0)  # clicked until gone
             expect(review.locator("#import-status")).to_have_text("From 5 orders: 5 games to add, 3 other items, 1 already owned.")
             games = review.locator(".pick").nth(0).locator("label")
             # every [CLUB] item identified from its order page, though the store no longer has it
@@ -268,6 +267,19 @@ with sync_playwright() as p:
             r3.reload()
             expect(r3.locator("#import[hidden]")).to_have_count(1)  # nothing left waiting after a reload
         check("your real order table: [CLUB] items without links are read; cancel closes the review", real_unlinked_rows)
+
+        def stop_midway():
+            for t in ctx.pages:
+                if t.url.startswith("chrome-extension://"):
+                    t.close()
+            pg.goto("https://account.superraregames.com/orders")
+            pg.locator(".srgo-account button.srgo-primary").click()
+            expect(pg.locator(".srgo-account-msg")).to_have_text(re.compile(r"Reading order \d+ of \d+"), timeout=30000)
+            pg.locator(".srgo-account button", has_text="Stop").click()
+            expect(pg.locator(".srgo-account-msg")).to_have_text(re.compile(r"Read \d of 5 orders \(stopped early\)"), timeout=30000)
+            expect(pg).to_have_url(re.compile(r"/orders$"))
+            expect(pg.locator(".srgo-account a.srgo-link")).to_have_text("Open the review")
+        check("Stop part-way keeps what was read and offers the review", stop_midway)
 
         def stale_tab():
             # what happens when you reload the extension with an orders tab open

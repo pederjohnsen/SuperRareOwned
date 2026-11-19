@@ -3,9 +3,11 @@
 // manage page shows a review list first.
 //
 // - Orders list (/orders): each order has "View order #N, <status>, <total>" and a
-//   "Buy again" link whose URL lists the order's product variant IDs. Titles aren't
-//   on this page, so the manage page looks the IDs up on the store.
-// - One order (/orders/<id>): item links carry the full product title.
+//   "Buy again" link whose URL lists the order's product variant IDs, but no titles.
+//   "Import from all orders" loads every order, then reads each order's own page
+//   (see "reading every order" below). Orders it can't read keep their variant IDs
+//   for the manage page to look up on the store.
+// - One order (/orders/<id>): item titles are on the page; "Add this order's games".
 
 (function () {
   const ext = (function (g) {
@@ -18,6 +20,7 @@
   const SKIP_STATUS = /cancel|refund/i; // "Canceled", "Cancelled", "Refunded"
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let stopRequested = false;
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -134,21 +137,12 @@
     }
   }
 
-  // Way 2: show the order inside the account site's own app (it's a single-page
-  // app, so changing the URL and announcing it makes it render that order), then
-  // read the items once they've appeared and stopped changing.
-  function goTo(url) {
-    const idx = (history.state && history.state.idx) || 0;
-    history.pushState({ usr: null, key: Math.random().toString(36).slice(2, 10), idx: idx + 1 }, "", url);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
-  }
-
   // Wait until the order on screen is complete: the rows add up to the subtotal
   // (seen twice in a row), or, if there's no subtotal, nothing has changed for
-  // a second. Gives up after `timeout`, returning what it has as partial.
+  // a second. Gives up after `timeout` (or on Stop), returning what it has as partial.
   async function waitForOrder(number, timeout = 15000) {
     let last = null, steady = 0, best = null;
-    for (let t = 0; t < timeout; t += 250) {
+    for (let t = 0; t < timeout && !stopRequested; t += 250) {
       await sleep(250);
       if (number && orderHeading(document) !== number) continue;
       const st = orderState(document);
@@ -162,11 +156,6 @@
       if (st.complete === null && steady >= 4) return { items: st.items, partial: false };
     }
     return best ? { items: best.items, partial: true } : null;
-  }
-
-  async function itemsByNavigation(o, timeout = 15000) {
-    goTo(o.url);
-    return waitForOrder(o.number, timeout);
   }
 
   // Click "Show more orders" until it's gone or stops loading more.
@@ -189,38 +178,6 @@
       if (!grew && document.querySelector("button[aria-label='Show more orders']")) return { complete: false };
     }
     return { complete: false };
-  }
-
-  let stopRequested = false;
-
-  // Fill in each order's items: way 1 if the first order shows it works, else way 2.
-  // Orders where neither works keep their variant IDs for the manage page to look up.
-  async function readAllOrders(orders, onProgress) {
-    let mode = null; // "fetch" | "nav" | "off"
-    let navFails = 0;
-    for (let i = 0; i < orders.length; i++) {
-      if (stopRequested) break;
-      const o = orders[i];
-      onProgress(i + 1, orders.length);
-      let res = null;
-      if (mode !== "nav" && mode !== "off") {
-        res = await itemsByFetch(o);
-        if (mode === null) mode = res ? "fetch" : "nav";
-      }
-      if (!res && mode !== "off") {
-        res = await itemsByNavigation(o);
-        if (mode === "nav") {
-          navFails = res && res.items.length ? 0 : navFails + 1;
-          if (navFails >= 3) mode = "off"; // the app isn't responding to this; stop trying
-        }
-      }
-      if (res && res.items.length) {
-        o.items = res.items;
-        if (res.partial) o.partial = true;
-      }
-    }
-    if (mode === "nav" || location.pathname.replace(/\/$/, "") !== "/orders") goTo("/orders");
-    return { read: orders.filter((o) => o.items && o.items.length).length, stopped: stopRequested };
   }
 
   const STALE = "SRG Owned was updated or reloaded. Reload this page and try again.";
@@ -247,35 +204,152 @@
     return a;
   }
 
+  // ---------- reading every order ----------
+  //
+  // Way 1, quiet: fetch each order page's HTML. Only works if the server sends
+  // the items in it; if the first three don't, the rest aren't tried.
+  // Way 2, for the rest: open each order page for real, one after another, just
+  // like opening them by hand. (Changing the URL from a script doesn't make the
+  // account app show another order.) Progress is kept in storage so it carries
+  // over from one page load to the next.
+
+  const WALK = "srgoWalk";
+  async function getWalk() {
+    return alive() ? (await ext.storage.local.get(WALK))[WALK] || null : null;
+  }
+  const setWalk = (w) => ext.storage.local.set({ [WALK]: w });
+  const clearWalk = () => ext.storage.local.remove(WALK);
+  const samePath = (a, b) => a.replace(/\/$/, "") === b.replace(/\/$/, "");
+
+  function summaryText(orders, total, skipped, stopped) {
+    const read = orders.filter((o) => !SKIP_STATUS.test(o.status) && o.items && o.items.length).length;
+    return `Read ${read} of ${total} orders${stopped ? " (stopped early)" : ""}` + (skipped ? `; ${skipped} cancelled or refunded skipped` : "") + ".";
+  }
+
+  async function importAllOrders(msg, setStop) {
+    const res = await loadAllOrders((n) => (msg.textContent = `Loading your orders… ${n} so far.`));
+    const orders = readOrdersList();
+    const kept = orders.filter((o) => !SKIP_STATUS.test(o.status));
+    const skipped = orders.length - kept.length;
+    setStop(true);
+
+    let tried = 0, failed = 0;
+    for (let i = 0; i < kept.length && !stopRequested; i++) {
+      if (tried >= 3 && failed === tried) break; // the server doesn't send items: open the pages instead
+      msg.textContent = `Reading order ${i + 1} of ${kept.length}…`;
+      const r = await itemsByFetch(kept[i]);
+      tried++;
+      if (r) kept[i].items = r.items;
+      else failed++;
+    }
+    const toOpen = kept.filter((o) => !(o.items && o.items.length)).map((o) => o.number);
+    if (!toOpen.length || stopRequested) {
+      await handOver({ source: "orders", complete: res.complete, orders });
+      return summaryText(orders, kept.length, skipped, stopRequested);
+    }
+    await setWalk({ orders, toOpen, i: 0, total: kept.length, skipped, complete: res.complete });
+    msg.textContent = "Opening your orders one by one…";
+    location.assign(orders.find((o) => o.number === toOpen[0]).url);
+    return null; // carries on after the page loads
+  }
+
+  async function finishWalk(w, stopped) {
+    await handOver({ source: "orders", complete: w.complete, orders: w.orders });
+    w.done = { text: summaryText(w.orders, w.total, w.skipped, stopped) };
+    await setWalk(w);
+    location.assign("/orders");
+  }
+
+  // Runs on each page load while an import is opening orders.
+  async function resumeWalk(w) {
+    busy = true;
+    if (w.done) {
+      if (!/\/orders\/?$/.test(location.pathname)) return location.assign("/orders");
+      await clearWalk();
+      const { row } = makePanel("done", w.done.text);
+      row.prepend(reviewLink());
+      return;
+    }
+    const o = w.orders.find((x) => x.number === w.toOpen[w.i]);
+    if (!o || !samePath(location.pathname, o.url)) {
+      // you went somewhere else in the middle of an import
+      const { msg, row, close } = makePanel("paused", `Your import is paused at order ${w.i + 1} of ${w.toOpen.length}.`);
+      const cont = button("Continue", "srgo-primary", () => location.assign(o.url));
+      const cancel = button("Cancel import", null, async () => {
+        await clearWalk();
+        msg.textContent = "Import cancelled. Nothing was added.";
+        cont.remove();
+        cancel.remove();
+        busy = false;
+      });
+      close.remove();
+      row.append(cont, cancel);
+      return;
+    }
+    const { msg, row, close } = makePanel("walking", `Reading order ${w.i + 1} of ${w.toOpen.length}…`);
+    close.remove();
+    const stop = button("Stop", null, () => {
+      stopRequested = true;
+      stop.disabled = true;
+      stop.textContent = "Stopping…";
+      msg.textContent = "Stopping after this order…";
+    });
+    row.append(stop);
+
+    const res = await waitForOrder(o.number, 15000);
+    if (!(await getWalk())) return; // cancelled in another tab
+    if (res && res.items.length) {
+      o.items = res.items;
+      if (res.partial) o.partial = true;
+    }
+    w.i++;
+    if (stopRequested || w.i >= w.toOpen.length) return finishWalk(w, stopRequested);
+    await setWalk(w);
+    location.assign(w.orders.find((x) => x.number === w.toOpen[w.i]).url);
+  }
+
   // ---------- panel ----------
 
+  function button(text, cls, onClick) {
+    const b = el("button", cls, text);
+    b.type = "button";
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
   let panel = null;
-  function showPanel(mode) {
-    if (panel && panel.dataset.mode === mode) return;
+  function makePanel(mode, text) {
     if (panel) panel.remove();
     panel = el("div", "srgo-account srgo-ui");
     panel.dataset.mode = mode;
     panel.setAttribute("role", "region");
     panel.setAttribute("aria-label", "SRG Owned");
     panel.appendChild(el("strong", null, "SRG Owned"));
-    const msg = el("p", "srgo-account-msg", mode === "list" ? "Add the games from your orders to your owned list. You'll see the list before anything is saved." : "Add this order's games to your owned list. You'll see the list before anything is saved.");
+    const msg = el("p", "srgo-account-msg", text);
     msg.setAttribute("aria-live", "polite");
-    panel.appendChild(msg);
     const row = el("div", "srgo-account-actions");
-    const go = el("button", "srgo-primary", mode === "list" ? "Import from all orders" : "Add this order's games");
-    go.type = "button";
-    const close = el("button", null, "Hide");
-    close.type = "button";
-    close.addEventListener("click", () => {
+    const close = button("Hide", null, () => {
       panel.remove();
       panel = null;
       hiddenFor = location.pathname;
+      busy = false;
+      last = location.pathname.replace(/\/$/, "");
     });
-    row.append(go, close);
-    panel.appendChild(row);
+    row.appendChild(close);
+    panel.append(msg, row);
     document.body.appendChild(panel);
+    return { msg, row, close };
+  }
 
-    go.addEventListener("click", async () => {
+  function showPanel(mode) {
+    if (panel && panel.dataset.mode === mode) return;
+    const { msg, row, close } = makePanel(
+      mode,
+      mode === "list"
+        ? "Add the games from your orders to your owned list. You'll see the list before anything is saved."
+        : "Add this order's games to your owned list. You'll see the list before anything is saved."
+    );
+    const go = button(mode === "list" ? "Import from all orders" : "Add this order's games", "srgo-primary", async () => {
       // check before spending minutes reading orders that couldn't be handed over
       if (!alive()) {
         msg.textContent = STALE;
@@ -286,25 +360,15 @@
         if (mode === "list") {
           busy = true;
           stopRequested = false;
-          const res = await loadAllOrders((n) => (msg.textContent = `Loading your orders… ${n} so far.`));
-          const orders = readOrdersList();
-          const kept = orders.filter((o) => !SKIP_STATUS.test(o.status));
-          const stop = el("button", null, "Stop");
-          stop.type = "button";
-          stop.addEventListener("click", () => {
+          const stop = button("Stop", null, () => {
             stopRequested = true;
             stop.disabled = true;
             stop.textContent = "Stopping…";
           });
-          close.replaceWith(stop);
-          const walk = await readAllOrders(kept, (i, n) => (msg.textContent = `Reading order ${i} of ${n}…`));
+          const text = await importAllOrders(msg, (on) => on && close.replaceWith(stop));
+          if (text === null) return; // opening orders one by one; continues on the next page
           stop.replaceWith(close);
-          const skipped = orders.length - kept.length;
-          msg.textContent =
-            `Read ${walk.read} of ${kept.length} orders${walk.stopped ? " (stopped early)" : ""}` +
-            (skipped ? `; ${skipped} cancelled or refunded skipped` : "") +
-            ".";
-          await handOver({ source: "orders", complete: res.complete, orders });
+          msg.textContent = text;
         } else {
           msg.textContent = "Waiting for the order to finish loading…";
           const res = await waitForOrder(orderHeading(document), 15000);
@@ -322,15 +386,16 @@
           await handOver({ source: "order", complete: true, orders: [order] });
         }
         go.replaceWith(reviewLink());
+        busy = false;
+        last = location.pathname.replace(/\/$/, "");
         return;
       } catch (e) {
         msg.textContent = e.message === STALE ? STALE : "Something went wrong: " + e.message;
-      } finally {
         busy = false;
-        last = location.pathname.replace(/\/$/, "");
       }
       go.disabled = false;
     });
+    row.prepend(go);
   }
 
   // The account site is a single-page app, so watch for page changes.
@@ -338,7 +403,7 @@
   let last = "";
   let busy = false;
   function check() {
-    if (busy) return; // we're moving between orders ourselves
+    if (busy) return; // an import is running or has just finished
     const path = location.pathname.replace(/\/$/, "");
     if (path === last) return;
     last = path;
@@ -350,6 +415,17 @@
       panel = null;
     }
   }
-  setInterval(check, 800);
-  check();
+
+  (async () => {
+    const w = await getWalk().catch(() => null);
+    if (w) {
+      last = location.pathname.replace(/\/$/, "");
+      resumeWalk(w).catch((e) => {
+        const { msg } = makePanel("error", "Something went wrong: " + e.message);
+        msg.setAttribute("role", "alert");
+      });
+    }
+    setInterval(check, 800);
+    check();
+  })();
 })();

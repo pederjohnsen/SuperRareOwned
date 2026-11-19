@@ -49,6 +49,7 @@ function render() {
   const b = main.querySelector("[aria-label='Show more orders']");
   if (b) b.addEventListener("click", () => { b.setAttribute("aria-busy", "true"); setTimeout(() => { shown = ORDERS.length; render(); }, 400); });
 }
-addEventListener("popstate", render);
+// The real account app doesn't re-render when a script changes the URL and
+// fires popstate, so neither does this one: only real page loads change what's shown.
 render();
 </script></body></html>
