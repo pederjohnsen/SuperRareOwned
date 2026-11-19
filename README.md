@@ -6,7 +6,17 @@ Browser extension (Chrome and Firefox) that marks Super Rare Games releases you 
 
 ## Install
 
-**Chrome / Edge / Brave:** open `chrome://extensions`, turn on Developer mode, click **Load unpacked** and pick the `src` folder. Keep the folder: Chrome loads it from there.
+- **Chrome, Edge and Brave:** [SRG Owned on the Chrome Web Store](https://chromewebstore.google.com/detail/kapgkpmjfhfphdkmojljcdmebppohmbf) *(in review: the link works once it's approved)*
+- **Firefox (desktop and Android):** on Firefox Add-ons *(in review: link coming once it's approved)*
+<!-- When approved: replace the Firefox line with
+     [SRG Owned on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/<slug>/)
+     and remove both "(in review…)" notes. -->
+
+The store versions update themselves. If you used a copy loaded from the source before, **Export** your list on its manage page first and **Import** it into the store version: they're separate installs and the store version starts empty.
+
+### From source (development)
+
+**Chrome, Edge and Brave:** open `chrome://extensions`, turn on Developer mode, click **Load unpacked** and pick the `src` folder. Keep the folder: Chrome loads it from there.
 
 **Firefox:** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and pick `src/manifest.json`. Temporary add-ons are removed when Firefox restarts. To keep it installed, sign it as an unlisted add-on (free, not published) at addons.mozilla.org → Developer Hub → Submit → "On your own", then install the signed .xpi. If badges don't appear, open the Extensions menu (puzzle icon) and allow it on superraregames.com.
 
