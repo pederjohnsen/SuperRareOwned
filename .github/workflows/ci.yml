@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Playwright and Chromium
         run: |
-          pip install playwright
+          pip install playwright pillow
           python -m playwright install --with-deps chromium
 
       - name: Browser tests (extension loaded in Chromium)
