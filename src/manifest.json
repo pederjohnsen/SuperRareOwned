@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SRG Owned (unofficial)",
   "short_name": "SRG Owned",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Marks Super Rare Games releases you already own, warns before you add one to your cart, and imports your order history.",
   "homepage_url": "https://github.com/pederjohnsen/SuperRareOwned",
   "icons": {

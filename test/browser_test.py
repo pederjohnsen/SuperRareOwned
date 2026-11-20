@@ -49,7 +49,7 @@ COLLECTION = [h for h in PRODUCTS if h.startswith(("club-", "copy-of"))]
 
 def card(handle):
     return f"""<li class="grid__item"><div class="card-wrapper product-card-wrapper"><div class="card">
-      <div class="card__inner"><div class="card__media"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"></div></div>
+      <div class="card__inner"><div class="card__media"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"><img class="card__hover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%2333e'/%3E%3C/svg%3E" width="300" height="300"></div></div>
       <div class="card__content"><div class="card__information"><h3 class="card__heading">
         <a href="/collections/club-26-products/products/{handle}" class="full-unstyled-link">{PRODUCTS[handle]}</a></h3>
         <div class="price">£24.92</div>
@@ -80,7 +80,9 @@ def page(body):
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>SRG mock</title><style>{THEME}</style>
     <style>body{{font-family:sans-serif;margin:0}} header{{padding:10px;background:#222;color:#fff}}
     ul.grid{{display:grid;grid-template-columns:repeat(4,240px);gap:16px;list-style:none;padding:16px}}
-    .card__media img{{width:100%;height:auto;display:block}}</style></head>
+    .card__media img{{width:100%;height:auto;display:block}}
+    .card__media{{position:relative}} .card__media .card__hover{{position:absolute;inset:0;opacity:0;transition:opacity .2s}}
+    .card:hover .card__media .card__hover{{opacity:1}} .card:hover .card__media img:first-child{{opacity:0}}</style></head>
     <body><header><nav><a href="/products/srg-149-grapple-dogs-cosmic-canines-switch">Menu link</a></nav>
       <div class="slider" style="visibility:hidden;height:0;overflow:hidden"><div class="product-card">
         <a href="/products/deluxe-edition-de-2-cassette-beasts-switch">Hidden slider card</a>
@@ -172,6 +174,19 @@ with sync_playwright() as p:
         expect(grapple).to_have_attribute("data-srgo-state", "owned")
         expect(pg).to_have_url(BASE + "/collections/club-26-products")  # click didn't navigate
     check("marking a card owned (badge and button on the cover)", mark_club_grapple)
+
+    def hover_picture_stays_hidden():
+        # the store's second "hover" picture must stay hidden on an owned card, and swap in on hover
+        def look(sel):
+            return grapple.locator(sel).evaluate("e => { const c = getComputedStyle(e); return [c.opacity, c.filter]; }")
+        pg.mouse.move(5, 5); pg.wait_for_timeout(400)
+        assert look(".card__hover") == ["0", "grayscale(1) opacity(0.45)"], look(".card__hover")
+        assert look("img:first-child") == ["1", "grayscale(1) opacity(0.45)"], look("img:first-child")
+        grapple.locator(".card__media").hover(); pg.wait_for_timeout(400)
+        assert look(".card__hover")[0] == "1" and look("img:first-child")[0] == "0", (look(".card__hover"), look("img:first-child"))
+        assert look(".card__hover")[1] == "grayscale(1) opacity(0.8)", look(".card__hover")
+        pg.mouse.move(5, 5)
+    check("owned card: the store's hover picture stays hidden until hover", hover_picture_stays_hidden)
 
     def toggle_clear_of_add_to_cart():
         card_ = pg.locator("li.grid__item", has_text="Bad End Theater")

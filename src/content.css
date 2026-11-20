@@ -7,8 +7,13 @@
 .srgo-relative { position: relative !important; }
 .srgo-inline-block { display: inline-block !important; }
 
-.srgo-card[data-srgo-state="owned"] img { filter: grayscale(1) !important; opacity: 0.45 !important; transition: opacity 0.15s !important; }
-.srgo-card[data-srgo-state="owned"]:hover img { opacity: 0.8 !important; }
+/* Owned covers are greyed and faded with a filter, never with opacity: many
+   cards hold a second "hover" picture that the store hides with opacity until
+   you hover, and setting opacity would show both pictures at once. The
+   filter's fade multiplies with the store's own opacity, so a hidden picture
+   stays hidden and the store's hover swap still works. */
+.srgo-card[data-srgo-state="owned"] img { filter: grayscale(1) opacity(0.45) !important; }
+.srgo-card[data-srgo-state="owned"]:hover img { filter: grayscale(1) opacity(0.8) !important; }
 
 /* ---------- shared text reset ---------- */
 html body .srgo-badge.srgo-badge,
