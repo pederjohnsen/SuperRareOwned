@@ -272,13 +272,64 @@
   // The badge and button sit on the cover's bottom edge: the store keeps its own
   // badges in the top corners ("New", "Low Stock"), the quick-view button in the
   // middle, and Add to cart below the price.
+  // A card's cover: everything that makes up its picture. Many cards stack a
+  // second "hover" picture with the first (under it, or hidden over it) and swap
+  // them on hover, so the cover is the box holding all the stacked pictures.
   function coverOf(card) {
-    const img = [...card.querySelectorAll("img")].find((i) => !i.closest(".srgo-ui"));
-    if (!img) return card;
-    const link = img.closest("a");
-    // a link holding just the image is exactly the cover; otherwise the image's box
-    const cover = link && link !== card && card.contains(link) && !link.textContent.trim() ? link : img.parentElement;
-    return cover && card.contains(cover) ? cover : card;
+    const imgs = [...card.querySelectorAll("img")].filter((i) => !i.closest(".srgo-ui"));
+    if (!imgs.length) return card;
+    const r0 = imgs[0].getBoundingClientRect();
+    const overlaps = (r) => {
+      const w = Math.min(r.right, r0.right) - Math.max(r.left, r0.left);
+      const h = Math.min(r.bottom, r0.bottom) - Math.max(r.top, r0.top);
+      return w > 0 && h > 0 && w * h >= 0.5 * Math.min(r.width * r.height, r0.width * r0.height);
+    };
+    const stack = r0.width && r0.height ? imgs.filter((i) => i === imgs[0] || overlaps(i.getBoundingClientRect())) : [imgs[0]];
+    let cover = stack[0].parentElement;
+    while (cover && cover !== card && !stack.every((i) => cover.contains(i))) cover = cover.parentElement;
+    if (!cover || !card.contains(cover)) return card;
+    // a link holding just the pictures is exactly the cover
+    const link = cover.closest("a");
+    if (link && link !== card && card.contains(link) && !link.textContent.trim()) cover = link;
+    return cover;
+  }
+
+  // Badges and buttons go in a layer laid exactly over the cover, not inside it:
+  // the cover itself is greyed and faded as one piece (fading the pictures one by
+  // one would let a picture stacked under the top one show through), and that
+  // mustn't fade the badge and button with it.
+  const layers = new Map();
+  const layerSizer = typeof ResizeObserver === "function" ? new ResizeObserver(() => layers.forEach(placeLayer)) : null;
+
+  function placeLayer(layer, cover) {
+    if (!cover.isConnected || !layer.isConnected) {
+      layers.delete(layer);
+      return;
+    }
+    const host = layer.parentElement;
+    const hr = host.getBoundingClientRect();
+    const cr = cover.getBoundingClientRect();
+    const st = layer.style;
+    st.setProperty("left", cr.left - hr.left - host.clientLeft + host.scrollLeft + "px", "important");
+    st.setProperty("top", cr.top - hr.top - host.clientTop + host.scrollTop + "px", "important");
+    st.setProperty("width", cr.width + "px", "important");
+    st.setProperty("height", cr.height + "px", "important");
+  }
+
+  function layerFor(card, cover) {
+    const host = cover === card ? card : cover.parentElement;
+    if (getComputedStyle(host).position === "static") host.classList.add("srgo-relative");
+    const layer = el("div", "srgo-layer srgo-ui");
+    if (cover === card) {
+      layer.classList.add("srgo-fill");
+      host.appendChild(layer);
+    } else {
+      cover.insertAdjacentElement("afterend", layer);
+      layers.set(layer, cover);
+      placeLayer(layer, cover);
+      if (layerSizer) layerSizer.observe(cover), layerSizer.observe(host);
+    }
+    return layer;
   }
 
   function decorateCard(card, title) {
@@ -288,20 +339,23 @@
     if (card.dataset.srgoState === state) return;
     card.dataset.srgoState = state;
     card.classList.add("srgo-card");
-    card.querySelectorAll(".srgo-badge, .srgo-toggle").forEach((n) => !n.closest(".srgo-pdp") && n.remove());
+    card.querySelectorAll(".srgo-layer").forEach((n) => !n.closest(".srgo-pdp") && (layers.delete(n), n.remove()));
+    card.querySelectorAll(".srgo-dim").forEach((n) => n.classList.remove("srgo-dim"));
     const cover = coverOf(card);
-    const cs = getComputedStyle(cover);
-    if (cs.position === "static") cover.classList.add("srgo-relative");
-    if (cs.display === "inline") cover.classList.add("srgo-inline-block");
+    if (getComputedStyle(cover).display === "inline") cover.classList.add("srgo-inline-block");
+    if (state === "owned" && cover !== card) cover.classList.add("srgo-dim");
+    const wantsToggle = onListingPage && editable(st) && !card.closest(IN_CART);
+    if (!text && !wantsToggle) return;
+    const layer = layerFor(card, cover);
     // small thumbnails (the cart) get just a tick, which fits inside the image
     const w = cover.getBoundingClientRect().width;
     const compact = w > 0 && w < 130;
     if (text) {
       const b = badge("srgo-badge srgo-" + state + (compact ? " srgo-compact" : ""), compact ? (state === "owned" ? "✓" : `${st.owned}/${st.total}`) : (state === "owned" ? "✓ " : "") + text, state === "owned", compact);
       if (compact) b.title = text;
-      cover.appendChild(b);
+      layer.appendChild(b);
     }
-    if (onListingPage && editable(st) && !card.closest(IN_CART)) cover.appendChild(toggleButton(title, st, true));
+    if (wantsToggle) layer.appendChild(toggleButton(title, st, true));
   }
 
   async function scanCards() {

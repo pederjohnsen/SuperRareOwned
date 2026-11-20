@@ -7,13 +7,24 @@
 .srgo-relative { position: relative !important; }
 .srgo-inline-block { display: inline-block !important; }
 
-/* Owned covers are greyed and faded with a filter, never with opacity: many
-   cards hold a second "hover" picture that the store hides with opacity until
-   you hover, and setting opacity would show both pictures at once. The
-   filter's fade multiplies with the store's own opacity, so a hidden picture
-   stays hidden and the store's hover swap still works. */
-.srgo-card[data-srgo-state="owned"] img { filter: grayscale(1) opacity(0.45) !important; }
-.srgo-card[data-srgo-state="owned"]:hover img { filter: grayscale(1) opacity(0.8) !important; }
+/* An owned card's cover is greyed and faded as one piece, not picture by
+   picture: cards stack a second "hover" picture with the first, and fading
+   each one lets the picture underneath show through. The filter's fade also
+   leaves the store's own opacity (its hover swap) alone. */
+.srgo-dim { filter: grayscale(1) opacity(0.45) !important; transition: filter 0.15s !important; }
+.srgo-card:hover .srgo-dim { filter: grayscale(1) opacity(0.8) !important; }
+
+/* The layer over the cover that holds the badge and button (placed by content.js) */
+html body .srgo-layer.srgo-layer {
+  all: initial !important;
+  display: block !important;
+  position: absolute !important;
+  z-index: 5 !important;
+  pointer-events: none !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important;
+}
+html body .srgo-layer.srgo-fill { top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; }
+html body .srgo-layer .srgo-toggle.srgo-toggle { pointer-events: auto !important; }
 
 /* ---------- shared text reset ---------- */
 html body .srgo-badge.srgo-badge,

@@ -49,7 +49,7 @@ COLLECTION = [h for h in PRODUCTS if h.startswith(("club-", "copy-of"))]
 
 def card(handle):
     return f"""<li class="grid__item"><div class="card-wrapper product-card-wrapper"><div class="card">
-      <div class="card__inner"><div class="card__media"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"><img class="card__hover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%2333e'/%3E%3C/svg%3E" width="300" height="300"></div></div>
+      <div class="card__inner"><div class="card__media"><div class="media--first"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e33'/%3E%3C/svg%3E" width="300" height="300"></div><div class="media--hover"><img class="card__hover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%2333e'/%3E%3C/svg%3E" width="300" height="300"></div></div></div>
       <div class="card__content"><div class="card__information"><h3 class="card__heading">
         <a href="/collections/club-26-products/products/{handle}" class="full-unstyled-link">{PRODUCTS[handle]}</a></h3>
         <div class="price">£24.92</div>
@@ -81,8 +81,9 @@ def page(body):
     <style>body{{font-family:sans-serif;margin:0}} header{{padding:10px;background:#222;color:#fff}}
     ul.grid{{display:grid;grid-template-columns:repeat(4,240px);gap:16px;list-style:none;padding:16px}}
     .card__media img{{width:100%;height:auto;display:block}}
-    .card__media{{position:relative}} .card__media .card__hover{{position:absolute;inset:0;opacity:0;transition:opacity .2s}}
-    .card:hover .card__media .card__hover{{opacity:1}} .card:hover .card__media img:first-child{{opacity:0}}</style></head>
+    /* like the store: the hover picture sits under the first one, in its own box, and the first fades out on hover */
+    .card__media{{position:relative}} .media--first{{position:relative;z-index:1;transition:opacity .2s}}
+    .media--hover{{position:absolute;inset:0;z-index:0}} .card:hover .media--first{{opacity:0}}</style></head>
     <body><header><nav><a href="/products/srg-149-grapple-dogs-cosmic-canines-switch">Menu link</a></nav>
       <div class="slider" style="visibility:hidden;height:0;overflow:hidden"><div class="product-card">
         <a href="/products/deluxe-edition-de-2-cassette-beasts-switch">Hidden slider card</a>
@@ -170,21 +171,35 @@ with sync_playwright() as p:
         grapple.hover()
         grapple.locator(".srgo-toggle").click()
         expect(grapple.locator(".srgo-badge")).to_have_text("✓ Owned")
-        expect(grapple.locator(".card__media .srgo-badge")).to_have_count(1)  # on the cover, not by Add to cart
+        expect(grapple.locator(".srgo-badge")).to_have_count(1)
+        b, c = grapple.locator(".srgo-badge").bounding_box(), grapple.locator(".card__media").bounding_box()
+        assert c["x"] <= b["x"] and b["y"] + b["height"] <= c["y"] + c["height"] and b["y"] > c["y"] + c["height"] / 2, (b, c)  # on the cover's bottom-left, not by Add to cart
         expect(grapple).to_have_attribute("data-srgo-state", "owned")
         expect(pg).to_have_url(BASE + "/collections/club-26-products")  # click didn't navigate
     check("marking a card owned (badge and button on the cover)", mark_club_grapple)
 
     def hover_picture_stays_hidden():
-        # the store's second "hover" picture must stay hidden on an owned card, and swap in on hover
-        def look(sel):
-            return grapple.locator(sel).evaluate("e => { const c = getComputedStyle(e); return [c.opacity, c.filter]; }")
+        # what you see: the first picture (red), greyed and faded, with nothing of the
+        # blue hover picture under it showing through; on hover, the hover picture
+        from PIL import Image
+        import io
+        def px():
+            c = grapple.locator(".card__media").bounding_box()
+            shot = Image.open(io.BytesIO(pg.screenshot(clip={"x": c["x"] + c["width"] / 2, "y": c["y"] + 20, "width": 1, "height": 1}))).convert("RGB")
+            return shot.getpixel((0, 0))
+        plain = pg.locator("li.grid__item:not([data-srgo-state='owned'])").first
         pg.mouse.move(5, 5); pg.wait_for_timeout(400)
-        assert look(".card__hover") == ["0", "grayscale(1) opacity(0.45)"], look(".card__hover")
-        assert look("img:first-child") == ["1", "grayscale(1) opacity(0.45)"], look("img:first-child")
-        grapple.locator(".card__media").hover(); pg.wait_for_timeout(400)
-        assert look(".card__hover")[0] == "1" and look("img:first-child")[0] == "0", (look(".card__hover"), look("img:first-child"))
-        assert look(".card__hover")[1] == "grayscale(1) opacity(0.8)", look(".card__hover")
+        r, g, b = px()
+        assert abs(r - g) <= 2 and abs(g - b) <= 2, (r, g, b)  # grey
+        # the red picture alone, greyed (~0.45 * luminance + 0.55 * white), not mixed with the blue under it
+        expect_lum = round(0.45 * (0.2126 * 238 + 0.7152 * 51 + 0.0722 * 51) + 0.55 * 255)
+        assert abs(r - expect_lum) <= 12, (r, expect_lum)
+        grapple.locator(".card__media").hover(); pg.wait_for_timeout(500)
+        r2, g2, b2 = px()
+        hover_lum = round(0.8 * (0.2126 * 51 + 0.7152 * 51 + 0.0722 * 238) + 0.2 * 255)
+        assert abs(r2 - hover_lum) <= 12 and abs(r2 - b2) <= 2, ((r2, g2, b2), hover_lum)  # the blue picture, greyed
+        # badge and button aren't faded with the cover
+        assert grapple.locator(".srgo-badge").evaluate("e => { let o = 1; for (let n = e; n; n = n.parentElement) { const c = getComputedStyle(n); o *= +c.opacity; if (c.filter !== 'none') return 'filtered: ' + c.filter; } return o; }") == 1
         pg.mouse.move(5, 5)
     check("owned card: the store's hover picture stays hidden until hover", hover_picture_stays_hidden)
 
@@ -288,7 +303,9 @@ with sync_playwright() as p:
         pg.goto(BASE + "/cart")
         row = pg.locator("tr.cart-item")
         expect(row).to_have_attribute("data-srgo-state", "owned")  # the row is the card, not the whole table
-        expect(row.locator(".cart-item__media a .srgo-badge.srgo-compact")).to_have_text("✓")  # a tick on the thumbnail
+        expect(row.locator(".cart-item__media .srgo-badge.srgo-compact")).to_have_text("✓")  # a tick on the thumbnail
+        b, t = row.locator(".srgo-badge").bounding_box(), row.locator(".cart-item__media img").bounding_box()
+        assert t["x"] <= b["x"] and b["x"] + b["width"] <= t["x"] + t["width"] and t["y"] <= b["y"] and b["y"] + b["height"] <= t["y"] + t["height"], (b, t)
         expect(pg.locator("table.srgo-card, form.srgo-card, thead .srgo-badge")).to_have_count(0)
         expect(row.locator(".srgo-toggle")).to_have_count(0)  # no marking from the cart
         state["cart"] = []
